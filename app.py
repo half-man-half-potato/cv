@@ -14,7 +14,7 @@ app = Dash(__name__)
 
 # Layout
 app.layout = html.Div([
-    html.H1("Top 10 South Park Guests by Episode Count", style={'textAlign': 'center'}),
+    html.H1("Top 10 South Park Famous People by Episode", style={'textAlign': 'center'}),
 
     html.Div([
         html.Label("Select Season(s):"),
