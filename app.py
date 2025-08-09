@@ -2,23 +2,23 @@ import pandas as pd
 import dash
 from dash import dash_table, html
 
-# 1. Load the CSV from the GitHub raw link
+# 1. Load CSV from GitHub raw link
 csv_url = "https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv"
 df = pd.read_csv(csv_url)
 
-# 2. Keep only unique projects
-projects_df = df[['Project']].drop_duplicates().reset_index(drop=True)
+# 2. Create DataFrame with Client ID list
+clients_df = pd.DataFrame(df["Client ID"])
 
-# 3. Build the Dash app
+# 3. Build Dash app
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
-    html.H2("List of Projects"),
+    html.H2("List of Client IDs"),
     dash_table.DataTable(
-        id="projects-table",
-        columns=[{"name": "Project", "id": "Project"}],
-        data=projects_df.to_dict("records"),
-        style_table={"overflowX": "auto"},  # No vertical scrollbar
+        id="clients-table",
+        columns=[{"name": "Client ID", "id": "Client ID"}],
+        data=clients_df.to_dict("records"),
+        style_table={"overflowX": "auto"},  # Only horizontal scroll if needed
         style_cell={
             "textAlign": "left",
             "padding": "5px",
@@ -29,6 +29,6 @@ app.layout = html.Div([
             "backgroundColor": "lightgrey",
             "fontWeight": "bold"
         },
-        page_size=len(projects_df)  # Show all rows at once
+        page_size=len(clients_df)  # Show all rows at once (no vertical scroll)
     )
 ])

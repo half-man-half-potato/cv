@@ -1,4 +1,4 @@
-﻿Achievement,Achievement Priority,Client Name Pre,Client Name,Client Name Post,Client Name Full,Client Misc,Client ID,Country,Location,Employer,Start Date,End Date,Duration,NDA,Project,Role,Role Size,Story,Task,Task Priority,Tool,Tool Type,Tool Size
+﻿Achievement,Achievement_Priority,Client_Name_Pre,Client_Name,Client_Name_Post,Client_Name_Full,Client_Misc,Client_ID,Country,Location,Employer,Start_Date,End_Date,Duration,NDA,Project,Role,Role_Size,Story,Task,Task_Priority,Tool,Tool_Type,Tool_Size
 ,,various,,,various,,id_17,USA,San Francisco Bay Area,EPAM Systems,1/1/2022,6/1/2022,180,y,Presales consulting and prototyping,Consultant,7,,"Prototyping, mockups / POC development.",10,MicroStrategy,BI,1
 ,,various,,,various,,id_17,USA,San Francisco Bay Area,EPAM Systems,1/1/2022,6/1/2022,180,y,Presales consulting and prototyping,Consultant,7,,"Prototyping, mockups / POC development.",10,TIBCO Spotfire,BI,1
 ,,various,,,various,,id_17,USA,San Francisco Bay Area,EPAM Systems,1/1/2022,6/1/2022,180,y,Presales consulting and prototyping,Consultant,7,,"Prototyping, mockups / POC development.",10,QlikView,BI,1
