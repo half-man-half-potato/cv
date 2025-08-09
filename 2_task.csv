@@ -1,0 +1,58 @@
+﻿task,client,task_desc,task_priority
+t1,z,"Prototyping, mockups / POC development.",10
+t2,a,Testing and evaluating controls procedures.,9
+t3,a,Ledger accounts data mining and analytical reviews.,8
+t4,a,Routine manual processes automation.,10
+t5,b,Testing and evaluating controls procedures.,9
+t6,b,Ledger accounts data mining and analytical reviews.,8
+t7,b,Routine manual processes automation.,10
+t8,c,"Corporate financial forecast model automation; improving quality, transparency, reliability and efficiency.",1
+t9,c,"Interactive P&L reports and models for Account Managers: design, data quality, performance, automation.",3
+t10,c,Quarterly business trips to the Company's HQ (US) to assure on-site presence and immediate availability.,2
+t11,c,"Ad hoc descriptive/predictive analytics, modeling, interactive tools development for Finance and HR.",4
+t12,c,Legacy VBA macros and MS Excel models maintenance and repair across financial departments.,5
+t13,d,"In charge of corporate financial forecast model: providing data for BoD, SEC, investors, earnings calls, auditors.",3
+t14,d,Mergers and acquisitions P&L consolidation.,4
+t15,d,"Ad hoc descriptive/predictive analytics, modeling, interactive tools development for Finance and HR.",4
+t16,e,Prototyping / POC development. Full day war room workshops.,9
+t17,e,Tableau server administration.,10
+t18,e,"Tableau research and consulting: data connectivity, security, integration, visualization capabilities.",9
+t19,e,Data profiling. Dummy data generation.,9
+t20,e,Data visualization best practices consulting.,9
+t21,f,Data quality analysis and FCRA compliance assurance. Regression testing.,9
+t22,f,Credits reports merging rules and algorithms analysis and improvement.,8
+t23,f,Stakeholder engagement and requirements management.,10
+t24,f,Credit report redesign and FCRA compliance assurance.,9
+t25,g,"Master data model creation. Reverse engineering legacy models, rules, transformations and lineage.",10
+t26,g,Stakeholder engagement and processes optimization.,10
+t27,g,Data migration QA framework development.,10
+t28,g,UI functional / unit testing and requirements management.,10
+t29,h,"Analytical dashboards design, development and consulting.",9
+t30,h,BI self-service framework implementation.,9
+t31,h,Data quality analysis.,10
+t32,h,"Data transformation, modeling and governance.",9
+t33,h,Technical writing; documentation and manuals creation.,10
+t34,i,"Analytical dashboards design, development, QA and UAT.",10
+t35,i,"Data analysis, modeling, transformation; legacy ETL scripts analysis and reverse-engineering.",10
+t36,i,Metrics and KPIs development.,10
+t37,i,"Tableau and data visualization best practices mentoring, knowledge sharing and consulting.",10
+t38,j,New data model creation. Reverse-engineering legacy data model logic and constraints.,10
+t39,j,"Application logic analysis: requirements, features, formulas and calculations.",10
+t40,k,"Development of the application data model, logic, rules, behavior, features.",1
+t41,k,Gathering and populating business data.,9
+t42,k,Assisting the machine learning team with the AI model outputs integration and testing.,10
+t43,k,Rules engine emulator design and development.,10
+t44,l,Validating data availability and requirements.,8
+t45,l,Data migration QA.,9
+t46,l,Re-creating legacy dashboards and data marts in the new environment.,6
+t47,l,Building self-service BI framework.,7
+t48,l,Server administration.,10
+t49,m,New financial tools design and development.,9
+t50,m,Legacy financial tools enhancement and migration / rebuilding.,8
+t51,m,Data transformation. Data QA.,9
+t52,m,"Writing technical and business documentation, manuals, user guides.",10
+t53,n,"New analytical framework implementation: data, tools, processes, communication.",8
+t54,n,"Analytical dashboards design, development, enhancement / customization. ",8
+t55,n,Migration of a large number of analytical dashboards to a new server.,10
+t56,n,Data QA assurance: prioritizing and resolving data QA requests from a large number of teams.,9
+t57,n,Data transformation and modeling.,8
