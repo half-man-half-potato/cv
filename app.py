@@ -6,24 +6,24 @@ from dash import Dash, html, dcc, dash_table
 url = "https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv"
 df = pd.read_csv(url)
 
-# Create df1
-df1 = df[['Client_ID', 'Employer', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates()
-df1 = df1.sort_values(by='Client_ID').drop(columns=['Client_ID'])
+# Create df_table
+df_table = df[['Client_ID', 'Employer', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates()
+df_table = df_table.sort_values(by='Client_ID').drop(columns=['Client_ID'])
 
-# Create df2
-df2 = df[['Client_ID', 'Start_Date', 'End_Date', 'Duration', 'Employer']].drop_duplicates()
-df2 = df2.sort_values(by='Client_ID', ascending=False)
+# Create df_gantt
+df_gantt = df[['Client_ID', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Duration', 'Employer']].drop_duplicates()
+df_gantt = df_gantt.sort_values(by='Client_ID', ascending=False)
 
 # Convert date columns for Gantt chart
-df2['Start_Date'] = pd.to_datetime(df2['Start_Date'])
-df2['End_Date'] = pd.to_datetime(df2['End_Date'])
+df_gantt['Start_Date'] = pd.to_datetime(df_gantt['Start_Date'])
+df_gantt['End_Date'] = pd.to_datetime(df_gantt['End_Date'])
 
 # Create Gantt chart
 fig_gantt = px.timeline(
-    df2,
+    df_gantt,
     x_start="Start_Date",
     x_end="End_Date",
-    y="Client_ID",
+    y="Client_Name_Full",
     color="Employer"
 )
 
@@ -53,8 +53,8 @@ app.layout = html.Div([
     # Table div
     html.Div(
         dash_table.DataTable(
-            columns=[{"name": col, "id": col} for col in df1.columns],
-            data=df1.to_dict("records"),
+            columns=[{"name": col, "id": col} for col in df_table.columns],
+            data=df_table.to_dict("records"),
             style_table={"height": "600px", "overflowY": "auto"},
             style_cell={'textAlign': 'left'}
         ),
