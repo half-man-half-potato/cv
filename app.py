@@ -1,81 +1,69 @@
 import pandas as pd
 import plotly.express as px
-from dash import Dash, dash_table, html, dcc
+from dash import Dash, html, dcc, dash_table
 
 # Load data
 url = "https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv"
 df = pd.read_csv(url)
 
-# Prepare df1
+# Create df1
 df1 = df[['Client_ID', 'Employer', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates()
-df1 = df1.sort_values('Client_ID').reset_index(drop=True)
-df1 = df1.drop(columns=['Client_ID'])
+df1 = df1.sort_values(by='Client_ID').drop(columns=['Client_ID'])
 
-# Prepare df2
+# Create df2
 df2 = df[['Client_ID', 'Start_Date', 'End_Date', 'Duration', 'Employer']].drop_duplicates()
-df2 = df2.sort_values('Client_ID').reset_index(drop=True)
+df2 = df2.sort_values(by='Client_ID', ascending=False)
 
-# Convert dates to datetime
+# Convert date columns for Gantt chart
 df2['Start_Date'] = pd.to_datetime(df2['Start_Date'])
 df2['End_Date'] = pd.to_datetime(df2['End_Date'])
 
-# Create Gantt chart with Client_ID sorted descending on y-axis
-fig = px.timeline(
+# Create Gantt chart
+fig_gantt = px.timeline(
     df2,
     x_start="Start_Date",
     x_end="End_Date",
     y="Client_ID",
-    color="Employer",
-    category_orders={"Client_ID": sorted(df2['Client_ID'].unique(), reverse=True)},
+    color="Employer"
 )
 
-# Remove title, legend, and y axis labels
-fig.update_layout(
-    title_text='',
+# Hide Y axis, legend, and title
+fig_gantt.update_layout(
     showlegend=False,
-    margin=dict(l=0, r=0, t=0, b=0),
-    height=600,
-    yaxis=dict(showticklabels=False, visible=False),
-    xaxis=dict(showgrid=True),
+    yaxis=dict(visible=False),
+    title=None,
+    margin=dict(l=0, r=0, t=0, b=0)
 )
 
-# Reverse y-axis to have descending order top to bottom
-fig.update_yaxes(autorange="reversed")
-
-# Dash app layout
+# Dash app
 app = Dash(__name__)
 
-app.layout = html.Div(
-    style={'display': 'flex', 'height': '650px', 'overflow': 'hidden', 'fontFamily': 'Arial, sans-serif'},
-    children=[
-        # Left: Gantt chart
-        html.Div(
-            dcc.Graph(figure=fig, config={'displayModeBar': False}),
-            style={'flex': '0 0 50%', 'padding': '10px', 'boxSizing': 'border-box', 'height': '100%'}
+app.layout = html.Div([
+    # Gantt chart div
+    html.Div(
+        dcc.Graph(figure=fig_gantt, config={"displayModeBar": False}),
+        style={
+            "position": "absolute",
+            "left": "0px",
+            "top": "0px",
+            "width": "300px",
+            "height": "600px"
+        }
+    ),
+    # Table div
+    html.Div(
+        dash_table.DataTable(
+            columns=[{"name": col, "id": col} for col in df1.columns],
+            data=df1.to_dict("records"),
+            style_table={"height": "600px", "overflowY": "auto"},
+            style_cell={'textAlign': 'left'}
         ),
-        # Right: Data Table
-        html.Div(
-            dash_table.DataTable(
-                id='table',
-                columns=[{"name": i, "id": i} for i in df1.columns],
-                data=df1.to_dict('records'),
-                page_action='none',
-                style_table={'height': '100%', 'overflowY': 'auto'},
-                style_cell={
-                    'textAlign': 'left',
-                    'padding': '5px',
-                    'fontSize': '14px',
-                    'whiteSpace': 'normal',
-                    'height': 'auto',
-                    'minWidth': '120px',
-                },
-                fixed_rows={'headers': True},
-                style_header={
-                    'backgroundColor': 'rgb(230, 230, 230)',
-                    'fontWeight': 'bold'
-                },
-            ),
-            style={'flex': '0 0 50%', 'padding': '10px', 'boxSizing': 'border-box', 'height': '100%', 'overflow': 'hidden'}
-        ),
-    ]
-)
+        style={
+            "position": "absolute",
+            "left": "400px",
+            "top": "0px",
+            "width": "850px",
+            "height": "600px"
+        }
+    )
+])
