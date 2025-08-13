@@ -94,7 +94,7 @@ app.layout = html.Div([
                     "name": "Client" if col == "Client_Name_Full"
                     else "Project / Product" if col == "Project"
                     else col,
-                    "id": col
+                    "id": col,
                 }
                 for col in df_table.columns
             ],
