@@ -40,7 +40,7 @@ def create_gantt(highlight_client_order=None):
 
     shapes = []
     for i in range(len(category_order)):
-        if i % 2 == 1:
+        if i % 2 == 0:
             shapes.append({
                 "type": "rect",
                 "xref": "paper",
@@ -61,7 +61,18 @@ def create_gantt(highlight_client_order=None):
         plot_bgcolor='white',
         shapes=shapes
     )
+
     fig.update_yaxes(visible=False)
+
+    fig.update_xaxes(
+        tickvals=[pd.Timestamp(f"{y}-01-01") for y in range(2010, 2026, 5)],
+        ticktext=[str(y) for y in range(2010, 2026, 5)],
+        tickangle=90,
+        color='gray',
+        tickfont=dict(size=10),
+        range=[pd.Timestamp("2009-10-01"), pd.Timestamp("2025-12-31")]
+    )
+
     return fig
 
 app = Dash(__name__)
@@ -84,7 +95,7 @@ BASE_STYLE = [
 app.layout = html.Div([
     html.Div(
         dcc.Graph(id="gantt-chart", figure=create_gantt(), config={"displayModeBar": False, "displaylogo": False}),
-        style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "435px"}
+        style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "446px"}
     ),
     html.Div(
         dash_table.DataTable(
@@ -114,7 +125,7 @@ app.layout = html.Div([
             css=[{"selector": ".show-hide", "rule": "display: none"}],
             style_data_conditional=BASE_STYLE  # initial (no row selection yet)
         ),
-        style={"position": "absolute", "left": "330px", "top": "0px", "width": "850px", "height": "500px"}
+        style={"position": "absolute", "left": "305px", "top": "0px", "width": "850px", "height": "500px"}
     )
 ])
 
