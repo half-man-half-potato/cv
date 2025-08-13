@@ -2,35 +2,31 @@ import pandas as pd
 import plotly.express as px
 from dash import Dash, html, dcc, dash_table, Input, Output
 
-# Load CSV
 url = "https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv"
 df = pd.read_csv(url)
 
-# Table dataframe (keep Client_Order for callbacks, but hide in UI)
 df_table = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates()
 df_table = df_table.sort_values(by='Client_Order')
 
-# Gantt dataframe
 df_gantt = df[['Client_ID', 'Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer']].drop_duplicates()
 df_gantt['Start_Date'] = pd.to_datetime(df_gantt['Start_Date'])
 df_gantt['End_Date'] = pd.to_datetime(df_gantt['End_Date'])
 df_gantt = df_gantt.sort_values(by='Client_Order', ascending=False)
 
 employer_colors = {
-    employer: color
-    for employer, color in zip(df_gantt['Employer'].unique(), ["darkgray", "gainsboro"])
+    'EPAM Systems': 'darkgray',
+    'Ernst & Young': 'gainsboro'
 }
+df_gantt['color'] = df_gantt['Employer'].map(employer_colors)
 
 def create_gantt(highlight_client_order=None):
     df_plot = df_gantt.copy()
-    df_plot['color'] = df_plot['Employer'].map(employer_colors)
 
     if highlight_client_order is not None:
         df_plot.loc[df_plot['Client_Order'] == highlight_client_order, 'color'] = 'dimgray'
 
     names_reversed = df_plot["Client_Name_Full"].tolist()[::-1]
-    seen = set()
-    category_order = [name for name in names_reversed if not (name in seen or seen.add(name))]
+    category_order = list(dict.fromkeys(names_reversed))
 
     fig = px.timeline(
         df_plot,
@@ -44,7 +40,7 @@ def create_gantt(highlight_client_order=None):
 
     shapes = []
     for i in range(len(category_order)):
-        if i % 2 == 0:
+        if i % 2 == 1:
             shapes.append({
                 "type": "rect",
                 "xref": "paper",
@@ -65,43 +61,63 @@ def create_gantt(highlight_client_order=None):
         plot_bgcolor='white',
         shapes=shapes
     )
-    fig.update_yaxes(
-        visible=False,
-        categoryorder="array",
-        categoryarray=category_order,
-        autorange="reversed"
-    )
+    fig.update_yaxes(visible=False)
     return fig
 
 app = Dash(__name__)
 
+# base styles used initially AND reused in callback
+BASE_STYLE = [
+    {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
+    # Blue active cell (override Plotly's default red) — set all four borders explicitly
+    {
+        "if": {"state": "active"},
+        "backgroundColor": "lightblue",
+        "border": "0px solid blue",
+        "borderTop": "0px solid blue",
+        "borderRight": "0px solid blue",
+        "borderBottom": "0px solid blue",
+        "borderLeft": "0px solid blue",
+    },
+]
+
 app.layout = html.Div([
     html.Div(
-        dcc.Graph(id="gantt-chart", figure=create_gantt(), config={"displayModeBar": False}),
+        dcc.Graph(id="gantt-chart", figure=create_gantt(), config={"displayModeBar": False, "displaylogo": False}),
         style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "435px"}
     ),
     html.Div(
         dash_table.DataTable(
             id="data-table",
             columns=[
-                {"name": col, "id": col, "hideable": True} if col == "Client_Order" else {"name": col, "id": col}
+                {
+                    "name": "Client" if col == "Client_Name_Full"
+                    else "Project / Product" if col == "Project"
+                    else col,
+                    "id": col
+                }
                 for col in df_table.columns
             ],
             data=df_table.to_dict("records"),
             style_table={"height": "500px", "overflowY": "auto"},
-            style_cell={'textAlign': 'left'},
+            style_cell={
+                "textAlign": "left",
+                "border": "none"  # remove all borders
+            },
+            style_header={
+                "borderBottom": "1px solid lightgray",  # header bottom border only
+                "fontWeight": "bold",
+                "color": "gray",
+                "backgroundColor": "white"
+            },
             hidden_columns=["Client_Order"],
             css=[{"selector": ".show-hide", "rule": "display: none"}],
-            # Initially only row banding - no active cell style here
-            style_data_conditional=[
-                {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
-            ]
+            style_data_conditional=BASE_STYLE  # initial (no row selection yet)
         ),
         style={"position": "absolute", "left": "330px", "top": "0px", "width": "850px", "height": "500px"}
     )
 ])
 
-# Callback to update gantt and highlight entire selected row
 @app.callback(
     Output("gantt-chart", "figure"),
     Output("data-table", "style_data_conditional"),
@@ -109,26 +125,18 @@ app.layout = html.Div([
     Input("data-table", "data")
 )
 def update_gantt_and_highlight(active_cell, table_data):
-    # Base row banding condition
-    base_conditional = [
-        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"}
-    ]
+    # start with base banding + blue active cell rule
+    style_data_conditional = BASE_STYLE.copy()
 
     if active_cell is None:
-        # No highlight
-        return create_gantt(), base_conditional
+        return create_gantt(), style_data_conditional
 
-    # Highlight the entire active row with lightblue
+    # whole-row highlight to match
     selected_row_idx = active_cell["row"]
-    highlight_conditional = {
+    style_data_conditional.append({
         "if": {"row_index": selected_row_idx},
-        "backgroundColor": "lightblue",
-        "border": "1px solid blue"
-    }
+        "backgroundColor": "lightblue"
+    })
 
-    style_data_conditional = base_conditional + [highlight_conditional]
-
-    clicked_row = active_cell["row"]
-    client_order_value = table_data[clicked_row]["Client_Order"]
-
+    client_order_value = table_data[selected_row_idx]["Client_Order"]
     return create_gantt(highlight_client_order=client_order_value), style_data_conditional
