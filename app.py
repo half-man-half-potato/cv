@@ -76,7 +76,20 @@ app.layout = html.Div([
             style_table={"height": "500px", "overflowY": "auto"},
             style_cell={'textAlign': 'left'},
             hidden_columns=["Client_Order"],
-            css=[{"selector": ".show-hide", "rule": "display: none"}]
+            css=[{"selector": ".show-hide", "rule": "display: none"}],
+            style_data_conditional=[
+                # Row banding first
+                {
+                    "if": {"row_index": "odd"},
+                    "backgroundColor": "rgb(248, 248, 248)"
+                },
+                # Active cell highlight last so it overrides
+                {
+                    "if": {"state": "active"},
+                    "backgroundColor": "lightblue",
+                    # "border": "1px solid red"
+                }
+            ]
         ),
         style={
             "position": "absolute",
