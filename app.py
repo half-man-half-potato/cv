@@ -30,6 +30,12 @@ def create_gantt(highlight_client_order=None):
     if highlight_client_order is not None:
         df_plot.loc[df_plot['Client_Order'] == highlight_client_order, 'color'] = 'dimgray'
 
+    # Build category order EXACTLY like Version 2 (reverse the row list, then de-duplicate preserving order)
+    names_reversed = df_plot["Client_Name_Full"].tolist()[::-1]
+    seen = set()
+    category_order = [name for name in names_reversed if not (name in seen or seen.add(name))]
+
+    # Base timeline
     fig = px.timeline(
         df_plot,
         x_start="Start_Date",
@@ -37,19 +43,47 @@ def create_gantt(highlight_client_order=None):
         y="Client_Name_Full",
         color="color",
         color_discrete_map="identity",
-        category_orders={
-            "Client_Name_Full": df_plot["Client_Name_Full"].tolist()[::-1]  # reverse order
-        }
+        category_orders={"Client_Name_Full": category_order}
     )
+
+    # Alternating row bands aligned to the category indices
+    shapes = []
+    for i in range(len(category_order)):
+        if i % 2 == 0:  # band every other row
+            shapes.append({
+                "type": "rect",
+                "xref": "paper",
+                "yref": "y",
+                "x0": 0,
+                "x1": 1,
+                "y0": i - 0.5,
+                "y1": i + 0.5,
+                "fillcolor": "rgba(240, 240, 240, 0.5)",
+                "layer": "below",
+                "line": {"width": 0}
+            })
 
     fig.update_layout(
         showlegend=False,
-        yaxis=dict(visible=False),
         title=None,
         margin=dict(l=0, r=0, t=0, b=0),
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        shapes=shapes
     )
+
+    # Lock the y-axis to that exact order and hide ticks/labels
+    fig.update_yaxes(
+        visible=False,
+        categoryorder="array",
+        categoryarray=category_order
+        # If you STILL see the vertical order flipped on your setup, uncomment the next line:
+        , autorange="reversed"
+    )
+
     return fig
+
+
+
 
 # Dash app
 app = Dash(__name__)
@@ -87,7 +121,7 @@ app.layout = html.Div([
                 {
                     "if": {"state": "active"},
                     "backgroundColor": "lightblue",
-                    # "border": "1px solid red"
+                    "border": "1px blue"
                 }
             ]
         ),
