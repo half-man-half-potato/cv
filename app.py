@@ -16,13 +16,11 @@ df_gantt['Start_Date'] = pd.to_datetime(df_gantt['Start_Date'])
 df_gantt['End_Date'] = pd.to_datetime(df_gantt['End_Date'])
 df_gantt = df_gantt.sort_values(by='Client_Order', ascending=False)
 
-# Define original colors
 employer_colors = {
     employer: color
     for employer, color in zip(df_gantt['Employer'].unique(), ["darkgray", "gainsboro"])
 }
 
-# Function to create Gantt figure
 def create_gantt(highlight_client_order=None):
     df_plot = df_gantt.copy()
     df_plot['color'] = df_plot['Employer'].map(employer_colors)
@@ -30,12 +28,10 @@ def create_gantt(highlight_client_order=None):
     if highlight_client_order is not None:
         df_plot.loc[df_plot['Client_Order'] == highlight_client_order, 'color'] = 'dimgray'
 
-    # Build category order EXACTLY like Version 2 (reverse the row list, then de-duplicate preserving order)
     names_reversed = df_plot["Client_Name_Full"].tolist()[::-1]
     seen = set()
     category_order = [name for name in names_reversed if not (name in seen or seen.add(name))]
 
-    # Base timeline
     fig = px.timeline(
         df_plot,
         x_start="Start_Date",
@@ -46,10 +42,9 @@ def create_gantt(highlight_client_order=None):
         category_orders={"Client_Name_Full": category_order}
     )
 
-    # Alternating row bands aligned to the category indices
     shapes = []
     for i in range(len(category_order)):
-        if i % 2 == 0:  # band every other row
+        if i % 2 == 0:
             shapes.append({
                 "type": "rect",
                 "xref": "paper",
@@ -70,34 +65,20 @@ def create_gantt(highlight_client_order=None):
         plot_bgcolor='white',
         shapes=shapes
     )
-
-    # Lock the y-axis to that exact order and hide ticks/labels
     fig.update_yaxes(
         visible=False,
         categoryorder="array",
-        categoryarray=category_order
-        # If you STILL see the vertical order flipped on your setup, uncomment the next line:
-        , autorange="reversed"
+        categoryarray=category_order,
+        autorange="reversed"
     )
-
     return fig
 
-
-
-
-# Dash app
 app = Dash(__name__)
 
 app.layout = html.Div([
     html.Div(
         dcc.Graph(id="gantt-chart", figure=create_gantt(), config={"displayModeBar": False}),
-        style={
-            "position": "absolute",
-            "left": "20px",
-            "top": "30px",
-            "width": "300px",
-            "height": "435px"
-        }
+        style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "435px"}
     ),
     html.Div(
         dash_table.DataTable(
@@ -111,41 +92,43 @@ app.layout = html.Div([
             style_cell={'textAlign': 'left'},
             hidden_columns=["Client_Order"],
             css=[{"selector": ".show-hide", "rule": "display: none"}],
+            # Initially only row banding - no active cell style here
             style_data_conditional=[
-                # Row banding first
-                {
-                    "if": {"row_index": "odd"},
-                    "backgroundColor": "rgb(248, 248, 248)"
-                },
-                # Active cell highlight last so it overrides
-                {
-                    "if": {"state": "active"},
-                    "backgroundColor": "lightblue",
-                    "border": "1px blue"
-                }
+                {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
             ]
         ),
-        style={
-            "position": "absolute",
-            "left": "330px",
-            "top": "0px",
-            "width": "850px",
-            "height": "500px"
-        }
+        style={"position": "absolute", "left": "330px", "top": "0px", "width": "850px", "height": "500px"}
     )
 ])
 
-# Callback for interactivity
+# Callback to update gantt and highlight entire selected row
 @app.callback(
     Output("gantt-chart", "figure"),
+    Output("data-table", "style_data_conditional"),
     Input("data-table", "active_cell"),
     Input("data-table", "data")
 )
-def update_gantt(active_cell, table_data):
+def update_gantt_and_highlight(active_cell, table_data):
+    # Base row banding condition
+    base_conditional = [
+        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"}
+    ]
+
     if active_cell is None:
-        return create_gantt()
+        # No highlight
+        return create_gantt(), base_conditional
+
+    # Highlight the entire active row with lightblue
+    selected_row_idx = active_cell["row"]
+    highlight_conditional = {
+        "if": {"row_index": selected_row_idx},
+        "backgroundColor": "lightblue",
+        "border": "1px solid blue"
+    }
+
+    style_data_conditional = base_conditional + [highlight_conditional]
 
     clicked_row = active_cell["row"]
     client_order_value = table_data[clicked_row]["Client_Order"]
 
-    return create_gantt(highlight_client_order=client_order_value)
+    return create_gantt(highlight_client_order=client_order_value), style_data_conditional
