@@ -63,7 +63,6 @@ def create_gantt(highlight_client_order=None):
     )
 
     fig.update_yaxes(visible=False)
-
     fig.update_xaxes(
         tickvals=[pd.Timestamp(f"{y}-01-01") for y in range(2010, 2026, 5)],
         ticktext=[str(y) for y in range(2010, 2026, 5)],
@@ -77,55 +76,61 @@ def create_gantt(highlight_client_order=None):
 
 app = Dash(__name__)
 
-# base styles used initially AND reused in callback
+# Base styles for table
 BASE_STYLE = [
     {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"},
-    # Blue active cell (override Plotly's default red) — set all four borders explicitly
+    # Active cell override (blue)
     {
         "if": {"state": "active"},
         "backgroundColor": "lightblue",
-        "border": "0px solid blue",
-        "borderTop": "0px solid blue",
-        "borderRight": "0px solid blue",
-        "borderBottom": "0px solid blue",
-        "borderLeft": "0px solid blue",
+        "border": "0px solid lightblue",
     },
+    # Force selected/focused cell to have white background immediately
+    {
+        "if": {"state": "selected"},
+        "backgroundColor": "white",
+        "border": "none"
+    },
+]
+
+# Additional CSS to eliminate lag/flicker
+CUSTOM_CSS = [
+    {"selector": "td.cell--active", "rule": "background-color: lightblue !important;"},
+    {"selector": "td.focused", "rule": "background-color: lightblue !important;"}
 ]
 
 app.layout = html.Div([
     html.Div(
         dcc.Graph(id="gantt-chart", figure=create_gantt(), config={"displayModeBar": False, "displaylogo": False}),
-        style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "446px"}
+        style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "446px", "zIndex": 1}
     ),
     html.Div(
         dash_table.DataTable(
             id="data-table",
             columns=[
-                {
-                    "name": "Client" if col == "Client_Name_Full"
-                    else "Project / Product" if col == "Project"
-                    else col,
-                    "id": col,
-                }
-                for col in df_table.columns
+                {"name": "Client", "id": "Client_Name_Full"},
+                {"name": "Project / Product", "id": "Project"},
+                {"name": "Country", "id": "Country"},
+                {"name": "Client_Order", "id": "Client_Order", "hideable": True}
             ],
+            hidden_columns=["Client_Order"],
             data=df_table.to_dict("records"),
             style_table={"height": "500px", "overflowY": "auto"},
-            style_cell={
-                "textAlign": "left",
-                "border": "none"  # remove all borders
-            },
+            style_cell={"textAlign": "left", "border": "none"},
             style_header={
-                "borderBottom": "1px solid lightgray",  # header bottom border only
+                "borderBottom": "1px solid lightgray",
                 "fontWeight": "bold",
                 "color": "gray",
                 "backgroundColor": "white"
             },
-            hidden_columns=["Client_Order"],
-            css=[{"selector": ".show-hide", "rule": "display: none"}],
-            style_data_conditional=BASE_STYLE  # initial (no row selection yet)
+            css=CUSTOM_CSS + [{"selector": ".show-hide", "rule": "display: none"}],
+            style_data_conditional=BASE_STYLE
         ),
-        style={"position": "absolute", "left": "305px", "top": "0px", "width": "850px", "height": "500px"}
+        style={"position": "absolute", "left": "305px", "top": "0px", "width": "850px", "height": "500px", "zIndex": 2}
+    ),
+    html.Div(
+        id="outside-click",
+        style={"display": "inline-block", "width": "90vw", "height": "90vh", "backgroundColor": "lavender"}
     )
 ])
 
@@ -136,18 +141,18 @@ app.layout = html.Div([
     Input("data-table", "data")
 )
 def update_gantt_and_highlight(active_cell, table_data):
-    # start with base banding + blue active cell rule
     style_data_conditional = BASE_STYLE.copy()
-
     if active_cell is None:
         return create_gantt(), style_data_conditional
-
-    # whole-row highlight to match
     selected_row_idx = active_cell["row"]
-    style_data_conditional.append({
-        "if": {"row_index": selected_row_idx},
-        "backgroundColor": "lightblue"
-    })
-
+    style_data_conditional.append({"if": {"row_index": selected_row_idx}, "backgroundColor": "lightblue"})
     client_order_value = table_data[selected_row_idx]["Client_Order"]
     return create_gantt(highlight_client_order=client_order_value), style_data_conditional
+
+@app.callback(
+    Output("data-table", "active_cell"),
+    Input("outside-click", "n_clicks"),
+    prevent_initial_call=True
+)
+def clear_active_cell(n_clicks):
+    return None
