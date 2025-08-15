@@ -2,38 +2,38 @@ import pandas as pd
 import plotly.express as px
 from dash import Dash, html, dcc, dash_table, Input, Output
 
-url = "https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv"
-df = pd.read_csv(url)
+df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
 
-df_table = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates()
-df_table = df_table.sort_values(by='Client_Order')
+df_table = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates().sort_values(by='Client_Order')
+style_base = [
+    {"if": {"state": "active"}, "backgroundColor": "lightblue"},
+    {"if": {"state": "selected", "row_index": "odd"}, "backgroundColor": "whitesmoke", "border": "none"},
+    {"if": {"state": "selected", "row_index": "even"}, "backgroundColor": "white", "border": "none"},
+    {"if": {"row_index": "odd"}, "backgroundColor": "whitesmoke"},
+]
 
-df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer']].drop_duplicates()
+df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer']].drop_duplicates().sort_values(by='Client_Order', ascending=False)
 df_gantt['Start_Date'] = pd.to_datetime(df_gantt['Start_Date'])
 df_gantt['End_Date'] = pd.to_datetime(df_gantt['End_Date'])
-df_gantt = df_gantt.sort_values(by='Client_Order', ascending=False) # optimize?: change data
-df_gantt['color'] = df_gantt['Employer'].map({'EPAM Systems': 'darkgray', 'Ernst & Young': 'gainsboro'}) # optimize: change data
+df_gantt['color'] = df_gantt['Employer'].map({'EPAM Systems': 'darkgray', 'Ernst & Young': 'gainsboro'})
 
-df_roles = df[['Role']].drop_duplicates().sort_values(by='Role')
-
-# "active" > "selected" > ""
-# if you click outside the table, None is passed to active_cell, so it is not "active" anymore, but it is still "selected"; formatting for both states is overridden below
-style_base = [
-    {"if": {"state": "active"}, "backgroundColor": "lightblue"}, # changes the default highlighting
-    {"if": {"state": "selected", "row_index": "odd"}, "backgroundColor": "whitesmoke", "border": "none"}, # changes the default highlighting
-    {"if": {"state": "selected", "row_index": "even"}, "backgroundColor": "white", "border": "none"}, # changes the default highlighting
-    {"if": {"row_index": "odd"}, "backgroundColor": "whitesmoke"},  # default row banding
+df_roles = df[['Role', 'Role_Font_Size']].drop_duplicates().sort_values(by='Role')
+role_style = [
+    {
+        "if": {"filter_query": f'{{Role}} = "{row["Role"]}"'},
+        "fontSize": f'{row["Role_Font_Size"]}px'
+    }
+    for _, row in df_roles.iterrows()
 ]
 
 
 def create_gantt(selected_client_order=None):
     df_plot = df_gantt.copy()
-
     if selected_client_order is not None:
         df_plot.loc[df_plot['Client_Order'] == selected_client_order, 'color'] = 'dimgray'
 
     names_reversed = df_plot["Client_Name_Full"].tolist()[::-1]
-    category_order = list(dict.fromkeys(names_reversed)) # easy way to delete duplicates (dictionaries remove duplicates when created)
+    category_order = list(dict.fromkeys(names_reversed))
 
     fig = px.timeline(
         df_plot,
@@ -70,7 +70,6 @@ def create_gantt(selected_client_order=None):
     )
 
     fig.update_yaxes(visible=False)
-
     fig.update_xaxes(
         tickvals=[pd.Timestamp(f"{y}-01-01") for y in range(2010, 2026, 5)],
         ticktext=[str(y) for y in range(2010, 2026, 5)],
@@ -93,7 +92,7 @@ app.layout = html.Div([
         dash_table.DataTable(
             id="data-table",
             data=df_table.to_dict("records"),
-            columns=[ # optimize: change data
+            columns=[
                 {"name": "Country", "id": "Country"},
                 {"name": "Client", "id": "Client_Name_Full"},
                 {"name": "Project / Product", "id": "Project"},
@@ -113,11 +112,13 @@ app.layout = html.Div([
             id="role-table",
             data=df_roles.to_dict("records"),
             columns=[{"name": "Role", "id": "Role"}],
-            style_data_conditional=[]
+            style_cell={"textAlign": "left", "border": "none"},
+            style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
+            style_data_conditional=role_style,
+            style_table={"overflowY": "auto", "height": "500px"},
         ),
         style={"position": "absolute", "left": "1180px", "top": "0px", "width": "300px", "height": "500px", "zIndex": 2}
     ),
-    # Clickable area
     html.Div(
         id="outside-click",
         style={"position": "absolute", "left": "0px", "top": "0px", "width": "90vw", "height": "90vh", "backgroundColor": "lavender", "zIndex": 0}
@@ -125,19 +126,15 @@ app.layout = html.Div([
 ])
 
 @app.callback(
-    # component_property values are the attributes, not variables (i.e. they cannot be renamed)
     Output("gantt-chart", "figure"),
     Output("data-table", "style_data_conditional"),
     Input("data-table", "active_cell"),
     Input("data-table", "data")
 )
 def update_gantt_and_table(active_cell, table_data):
-    # start with base banding + blue active cell rule
     style_data_conditional = style_base.copy()
-
     if active_cell is None:
-        return create_gantt(), style_data_conditional # optimize?
-
+        return create_gantt(), style_data_conditional
     active_cell_row = active_cell["row"]
     style_data_conditional.append({"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"})
     return create_gantt(selected_client_order=table_data[active_cell_row]["Client_Order"]), style_data_conditional
@@ -149,25 +146,22 @@ def update_gantt_and_table(active_cell, table_data):
 )
 def update_roles(active_cell, table_rows):
     if not active_cell:
-        return []
-
+        return role_style  # keep default font sizes
     active_cell_row = active_cell["row"]
     client_order_value = table_rows[active_cell_row]["Client_Order"]
-
-    # get list of roles for that Client_Order (may be more than one)
     related_roles = df[df["Client_Order"] == client_order_value]["Role"].unique()
-
-    return [
+    highlight_style = [
         {
             "if": {"filter_query": f'{{Role}} = "{role}"'},
             "backgroundColor": "lightblue",
         }
         for role in related_roles
     ]
+    return role_style + highlight_style
 
 @app.callback(
     Output("data-table", "active_cell"),
-    Input("outside-click", "n_clicks"), # n_clicks is an integer that represents that number of times the button has been clicked
+    Input("outside-click", "n_clicks"),
     prevent_initial_call=True
 )
 def clear_active_cell(n_clicks):
