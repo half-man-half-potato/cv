@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.express as px
 from dash import Dash, html, dcc, dash_table, Input, Output
+import random
 
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
 
@@ -26,8 +27,101 @@ role_style = [
     for _, row in df_roles.iterrows()
 ]
 
+df_achievements = df[['Achievement', 'Achievement_Priority']].drop_duplicates().sort_values(by='Achievement_Priority')
 
-def create_gantt(selected_client_order=None):
+df_tasks = df[['Task', 'Task_Priority']].drop_duplicates().sort_values(by='Task_Priority')
+
+
+
+
+
+
+
+
+# Filter rows with non-empty Tool info and remove duplicates
+df_tools = df[["Tool", "Tool_Type", "Tool_Size"]].drop_duplicates()
+tool_type_colors = {
+    "BI": "darkred",
+    "data": "indianred",
+    "language": "dimgray",
+    "misc": "darkgray"
+}
+df_tools["Color"] = df_tools["Tool_Type"].map(tool_type_colors).fillna("black")
+
+size_min, size_max = 10, 24
+tool_sizes = df_tools["Tool_Size"]
+size_scaled = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - tool_sizes.min()) * (size_max - size_min)) + size_min
+tools_count = len(df_tools)
+random.seed(42)
+x_gap = 15
+y_gap = 5
+def rand_custom_x():
+    return random.gauss(0.5, 0.15)
+def rand_custom_y():
+    return random.gauss(0.5, 0.15)
+df_tools["x_pos"] = [rand_custom_x() for _ in range(tools_count)]
+df_tools["y_pos"] = [rand_custom_y() for _ in range(tools_count)]
+df_tools["len"] = df_tools["Tool"].str.len()
+
+counter2 = 0
+while 1 == 1 :
+    counter = 0
+    for i in range(tools_count):
+        for j in range(tools_count):
+            if  i > j:
+                i_x_loc = df_tools.iloc[i, 4]
+                i_y_loc = df_tools.iloc[i, 5]
+                j_x_loc = df_tools.iloc[j, 4]
+                j_y_loc = df_tools.iloc[j, 5]
+                if abs(i_x_loc - j_x_loc) < x_gap/100 and abs(i_y_loc - j_y_loc) < y_gap/100:
+                    df_tools.iloc[i, 4] = rand_custom_x()
+                    df_tools.iloc[i, 5] = rand_custom_y()
+                    counter += 1
+    counter2 += 1
+    if counter == 0:
+        break
+
+print(counter2)
+
+
+
+
+
+def create_wordcloud():
+    fig = px.scatter(
+        df_tools,
+        x=df_tools["x_pos"],
+        y=df_tools["y_pos"],
+        text="Tool"
+    )
+    fig.update_traces(
+        mode="text",
+        textposition="middle center",
+        textfont_size=size_scaled,
+        textfont_color=df_tools["Color"],
+        hovertemplate="x_pos: %{x}<br>y_pos: %{y}",
+        customdata=df_tools[["Tool_Type", "Tool_Size"]]
+    )
+    fig.update_layout(
+        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+        plot_bgcolor='white',
+        height=600,
+        margin=dict(l=10, r=10, t=10, b=10)
+    )
+    fig.update_yaxes(visible=False)
+    fig.update_xaxes(visible=False)
+
+    return fig
+
+
+
+
+
+
+
+
+def create_gantt(selected_client_order=None, selected_client_row=None):
     df_plot = df_gantt.copy()
     if selected_client_order is not None:
         df_plot.loc[df_plot['Client_Order'] == selected_client_order, 'color'] = 'dimgray'
@@ -47,7 +141,20 @@ def create_gantt(selected_client_order=None):
 
     shapes = []
     for i in range(len(category_order)):
-        if i % 2 == 0:
+        if selected_client_order is not None and i == len(category_order) - selected_client_row - 1:
+            shapes.append({
+                "type": "rect",
+                "xref": "paper",
+                "yref": "y",
+                "x0": 0,
+                "x1": 1,
+                "y0": i - 0.5,
+                "y1": i + 0.5,
+                "fillcolor": "rgba(173, 216, 230, 1)",
+                "layer": "below",
+                "line": {"width": 0}
+            })
+        elif i % 2 == 0:
             shapes.append({
                 "type": "rect",
                 "xref": "paper",
@@ -86,7 +193,12 @@ app = Dash(__name__)
 app.layout = html.Div([
     html.Div(
         dcc.Graph(id="gantt-chart", figure=create_gantt(), config={"displayModeBar": False, "displaylogo": False}),
-        style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "446px", "zIndex": 1}
+        style={"position": "absolute", "left": "20px", "top": "30px", "width": "300px", "height": "446px", "borderTop": "1px solid lightgray", "zIndex": 2}
+    ),
+    html.Div(
+        "Timeline / Client",
+        style={"position": "absolute", "left": "20px", "top":  "0px","backgroundColor": "white", "height": "30px",
+               "padding": "5px", "fontSize": "12px", "fontWeight": "bold", "color": "gray", "zIndex": 1}
     ),
     html.Div(
         dash_table.DataTable(
@@ -105,7 +217,7 @@ app.layout = html.Div([
             style_data_conditional=style_base,
             css=[{"selector": ".show-hide", "rule": "display: none"}],
         ),
-        style={"position": "absolute", "left": "305px", "top": "0px", "width": "850px", "height": "500px", "zIndex": 2}
+        style={"position": "absolute", "left": "305px", "top": "0px", "width": "850px", "height": "500px", "zIndex": 3}
     ),
     html.Div(
         dash_table.DataTable(
@@ -119,6 +231,57 @@ app.layout = html.Div([
         ),
         style={"position": "absolute", "left": "1180px", "top": "0px", "width": "300px", "height": "500px", "zIndex": 2}
     ),
+    html.Div(
+        dash_table.DataTable(
+            id="achievements-table",
+            data=df_achievements.to_dict("records"),
+            columns=[{"name": "Achievement", "id": "Achievement"}],
+            style_cell={"textAlign": "left", "border": "none"},
+            style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
+            # style_data_conditional=,
+            style_table={"overflowY": "auto", "height": "180px"},
+            fixed_rows={'headers': True},
+        ),
+        style={"position": "absolute", "left": "20px", "top": "500px", "width": "650px", "height": "180px", "zIndex": 2}
+    ),
+    html.Div(
+        dash_table.DataTable(
+            id="tasks-table",
+            data=df_tasks.to_dict("records"),
+            columns=[{"name": "Task", "id": "Task"}],
+            style_cell={"textAlign": "left", "border": "none"},
+            style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
+            # style_data_conditional=,
+            style_table={"overflowY": "auto", "height": "180px"},
+            fixed_rows={'headers': True},
+        ),
+        style={"position": "absolute", "left": "20px", "top": "700px", "width": "650px", "height": "180px", "zIndex": 2}
+    ),
+
+
+
+
+
+
+
+
+
+
+
+    html.Div(
+        dcc.Graph(id="word_cloud", figure=create_wordcloud(), config={"displayModeBar": False, "displaylogo": False}),
+        style={"position": "absolute", "left": "700px", "top": "500px", "width": "800px", "height": "380px", "borderTop": "1px solid lightgray", "zIndex": 2}
+    ),
+
+
+
+
+
+
+
+
+
+
     html.Div(
         id="outside-click",
         style={"position": "absolute", "left": "0px", "top": "0px", "width": "90vw", "height": "90vh", "backgroundColor": "lavender", "zIndex": 0}
@@ -137,7 +300,7 @@ def update_gantt_and_table(active_cell, table_data):
         return create_gantt(), style_data_conditional
     active_cell_row = active_cell["row"]
     style_data_conditional.append({"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"})
-    return create_gantt(selected_client_order=table_data[active_cell_row]["Client_Order"]), style_data_conditional
+    return create_gantt(selected_client_order=table_data[active_cell_row]["Client_Order"], selected_client_row=active_cell_row), style_data_conditional
 
 @app.callback(
     Output("role-table", "style_data_conditional"),
@@ -158,6 +321,32 @@ def update_roles(active_cell, table_rows):
         for role in related_roles
     ]
     return role_style + highlight_style
+
+@app.callback(
+    Output("achievements-table", "data"),
+    Input("data-table", "active_cell"),
+    Input("data-table", "data")
+)
+def filter_achievements(active_cell, table_data):
+    if active_cell is None:
+        return df_achievements.to_dict("records")
+    row_clicked = active_cell["row"]
+    selected_client = table_data[row_clicked]["Client_Name_Full"]
+    filtered_achievements = df[df["Client_Name_Full"] == selected_client]["Achievement"].drop_duplicates().sort_values()
+    return pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records")
+
+@app.callback(
+    Output("tasks-table", "data"),
+    Input("data-table", "active_cell"),
+    Input("data-table", "data")
+)
+def filter_tasks(active_cell, table_data):
+    if active_cell is None:
+        return df_tasks.to_dict("records")
+    row_clicked = active_cell["row"]
+    selected_client = table_data[row_clicked]["Client_Name_Full"]
+    filtered_tasks = df[df["Client_Name_Full"] == selected_client]["Task"].drop_duplicates().sort_values()
+    return pd.DataFrame({"Task": filtered_tasks}).to_dict("records")
 
 @app.callback(
     Output("data-table", "active_cell"),
