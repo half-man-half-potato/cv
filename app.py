@@ -20,11 +20,12 @@ df_gantt['color'] = df_gantt['Employer'].map({'EPAM Systems': 'darkgray', 'Ernst
 
 df_roles = df[['Role', 'Role_Font_Size']].drop_duplicates().sort_values(by='Role')
 df_roles_style = [
-    {
-        "if": {"filter_query": f'{{Role}} = "{row["Role"]}"'},
-        "fontSize": f'{row["Role_Font_Size"]}px'
-    }
+    {"if": {"filter_query": f'{{Role}} = "{row["Role"]}"'}, "fontSize": f'{row["Role_Font_Size"]}px'}
     for _, row in df_roles.iterrows()
+]
+df_roles_style += [
+    {"if": {"state": "active"}, "backgroundColor": "lightblue"},
+    {"if": {"state": "selected"}, "backgroundColor": "white", "border": "none"},
 ]
 
 df_achievements = df[['Achievement', 'Achievement_Priority']].drop_duplicates().sort_values(by='Achievement_Priority')
@@ -250,23 +251,26 @@ app.layout = html.Div([
 @app.callback(
     Output("gantt-chart", "figure"), # 1. update Gantt
     Output("projects-table", "style_data_conditional"), # 2. update Projects
-    Output("roles-table", "style_data_conditional"), # 3. update Roles
+    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. update Roles
     Output("achievements-table", "data"), # 4. update Achievements
     Output("tasks-table", "data"), # 5. update Tasks
     Output("word-cloud", "figure"),  # 6. update Word cloud
     Input("projects-table", "active_cell"),
-    Input("projects-table", "data")
+    Input("projects-table", "data"),
+    prevent_initial_call=True
 )
 def projects_table_callback(active_cell, data):
     
     # default outputs (no active_cell in Projects table)
     if active_cell is None:
-        return (create_gantt(), # 1
+        return (
+                create_gantt(), # 1
                 df_clients_style, # 2
                 df_roles_style, # 3
                 df_achievements.to_dict("records"), # 4
                 df_tasks.to_dict("records"), # 5
-                create_wordcloud()) # 6
+                create_wordcloud() # 6
+                )
 
     active_cell_row = active_cell["row"]
     selected_client_order = data[active_cell_row]["Client_Order"]
@@ -280,22 +284,59 @@ def projects_table_callback(active_cell, data):
 
     filtered_tasks = df[df["Client_Order"] == selected_client_order]["Task"].drop_duplicates().sort_values()
 
-    print(filtered_tasks)
-    print(type(filtered_tasks))
-
     # conditional outputs (active_cell in Projects table)
-    return (create_gantt(selected_client_order=selected_client_order, selected_client_row=active_cell_row), # 1
+    return (
+            create_gantt(selected_client_order=selected_client_order, selected_client_row=active_cell_row), # 1
             df_clients_style + df_clients_style_conditional, # 2
             df_roles_style + df_roles_style_conditional, # 3
             pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"), # 4 - UNDERSTAND THIS
             pd.DataFrame({"Task": filtered_tasks}).to_dict("records"), # 5 - UNDERSTAND THIS
-            create_wordcloud(selected_client_order=selected_client_order)) # 6
+            create_wordcloud(selected_client_order=selected_client_order) # 6
+            )
 
 @app.callback(
-    Output("projects-table", "active_cell"),
+    # Output("gantt-chart", "figure"), # 1. update Gantt
+    # Output("projects-table", "style_data_conditional"), # 2. update Projects
+    Output("projects-table", "active_cell", allow_duplicate=True), # new
+    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. update Roles
+    # Output("achievements-table", "data"), # 4. update Achievements
+    # Output("tasks-table", "data"), # 5. update Tasks
+    # Output("word-cloud", "figure"),  # 6. update Word cloud
+    Input("roles-table", "active_cell"),
+    Input("roles-table", "data"),
+    prevent_initial_call=True
+)
+def roles_table_callback(active_cell, data):
+    if active_cell is None:
+        return (
+                # create_gantt(), # 1
+                # df_clients_style, # 2
+                None, # new
+                df_roles_style, # 3
+                # df_achievements.to_dict("records"), # 4
+                # df_tasks.to_dict("records"), # 5
+                # create_wordcloud() # 6
+                )
+    active_cell_row = active_cell["row"]
+    selected_role = data[active_cell_row]["Role"]
+    df_roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{selected_role}"'}, "backgroundColor": "lightblue"}]
+
+    return (
+            # create_gantt(selected_client_order=selected_client_order, selected_client_row=active_cell_row), # 1
+            # df_clients_style + df_clients_style_conditional, # 2
+            None,
+            df_roles_style + df_roles_style_conditional, # 3
+            # pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"), # 4 - UNDERSTAND THIS
+            # pd.DataFrame({"Task": filtered_tasks}).to_dict("records"), # 5 - UNDERSTAND THIS
+            # create_wordcloud(selected_client_order=selected_client_order) # 6
+            )
+
+@app.callback(
+    Output("projects-table", "active_cell", allow_duplicate=True),
+    Output("roles-table", "active_cell"),
     Input("outside-click", "n_clicks"),
     prevent_initial_call=True
 )
 def clear_active_cell(n_clicks):
-    return None
+    return None, None
 
