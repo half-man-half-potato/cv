@@ -5,8 +5,8 @@ import random
 
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
 
-df_table = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates().sort_values(by='Client_Order')
-style_base = [
+df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates().sort_values(by='Client_Order')
+df_clients_style = [
     {"if": {"state": "active"}, "backgroundColor": "lightblue"},
     {"if": {"state": "selected", "row_index": "odd"}, "backgroundColor": "whitesmoke", "border": "none"},
     {"if": {"state": "selected", "row_index": "even"}, "backgroundColor": "white", "border": "none"},
@@ -19,7 +19,7 @@ df_gantt['End_Date'] = pd.to_datetime(df_gantt['End_Date'])
 df_gantt['color'] = df_gantt['Employer'].map({'EPAM Systems': 'darkgray', 'Ernst & Young': 'gainsboro'})
 
 df_roles = df[['Role', 'Role_Font_Size']].drop_duplicates().sort_values(by='Role')
-role_style = [
+df_roles_style = [
     {
         "if": {"filter_query": f'{{Role}} = "{row["Role"]}"'},
         "fontSize": f'{row["Role_Font_Size"]}px'
@@ -41,10 +41,16 @@ df_tasks = df[['Task', 'Task_Priority']].drop_duplicates().sort_values(by='Task_
 # Filter rows with non-empty Tool info and remove duplicates
 df_tools = df[["Tool", "Tool_Type", "Tool_Size"]].drop_duplicates()
 tool_type_colors = {
-    "BI": "darkred",
-    "data": "indianred",
-    "language": "dimgray",
-    "misc": "darkgray"
+    "BI": "rgb(200,82,0)",
+    "data": "rgb(245,156,60)",
+    "language": "rgb(112,112,112)",
+    "misc": "rgb(183,183,183)"
+}
+tool_type_colors_2 = {
+    "BI": "rgb(249,234,224)",
+    "data": "rgb(255,246,236)",
+    "language": "rgb(241,241,241)",
+    "misc": "rgb(248,248,248)"
 }
 df_tools["Color"] = df_tools["Tool_Type"].map(tool_type_colors).fillna("black")
 
@@ -80,27 +86,36 @@ while 1 == 1 :
     counter2 += 1
     if counter == 0:
         break
-
 print(counter2)
 
+df_tools.to_csv("word_cloud_coordinates.csv", index=False)
+
+###################
+
+def create_wordcloud(selected_client_order=None):
+    df_plot = df_tools.copy()
+    if selected_client_order is not None:
+        related_tools = df[df["Client_Order"] == selected_client_order]["Tool"].drop_duplicates()
+        print(f'{related_tools}')
+        print(f'{type(related_tools)}')
 
 
+        # df_plot.loc[df_plot['Client_Order'] == selected_client_order, 'color'] = 'dimgray'
+        # pd.DataFrame({"Task": filtered_tasks}).to_dict("records"),  # 5 - UNDERSTAND THIS
 
-
-def create_wordcloud():
     fig = px.scatter(
-        df_tools,
-        x=df_tools["x_pos"],
-        y=df_tools["y_pos"],
+        df_plot,
+        x=df_plot["x_pos"],
+        y=df_plot["y_pos"],
         text="Tool"
     )
     fig.update_traces(
         mode="text",
         textposition="middle center",
         textfont_size=size_scaled,
-        textfont_color=df_tools["Color"],
+        textfont_color=df_plot["Color"],
         hovertemplate="x_pos: %{x}<br>y_pos: %{y}",
-        customdata=df_tools[["Tool_Type", "Tool_Size"]]
+        customdata=df_plot[["Tool_Type", "Tool_Size"]]
     )
     fig.update_layout(
         xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
@@ -113,13 +128,7 @@ def create_wordcloud():
     fig.update_xaxes(visible=False)
 
     return fig
-
-
-
-
-
-
-
+#####################
 
 def create_gantt(selected_client_order=None, selected_client_row=None):
     df_plot = df_gantt.copy()
@@ -202,8 +211,8 @@ app.layout = html.Div([
     ),
     html.Div(
         dash_table.DataTable(
-            id="data-table",
-            data=df_table.to_dict("records"),
+            id="projects-table",
+            data=df_clients.to_dict("records"),
             columns=[
                 {"name": "Country", "id": "Country"},
                 {"name": "Client", "id": "Client_Name_Full"},
@@ -214,19 +223,19 @@ app.layout = html.Div([
             style_table={"height": "500px", "overflowY": "auto"},
             style_cell={"textAlign": "left", "border": "none"},
             style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
-            style_data_conditional=style_base,
+            style_data_conditional=df_clients_style,
             css=[{"selector": ".show-hide", "rule": "display: none"}],
         ),
         style={"position": "absolute", "left": "305px", "top": "0px", "width": "850px", "height": "500px", "zIndex": 3}
     ),
     html.Div(
         dash_table.DataTable(
-            id="role-table",
+            id="roles-table",
             data=df_roles.to_dict("records"),
             columns=[{"name": "Role", "id": "Role"}],
             style_cell={"textAlign": "left", "border": "none"},
             style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
-            style_data_conditional=role_style,
+            style_data_conditional=df_roles_style,
             style_table={"overflowY": "auto", "height": "500px"},
         ),
         style={"position": "absolute", "left": "1180px", "top": "0px", "width": "300px", "height": "500px", "zIndex": 2}
@@ -258,98 +267,66 @@ app.layout = html.Div([
         style={"position": "absolute", "left": "20px", "top": "700px", "width": "650px", "height": "180px", "zIndex": 2}
     ),
 
-
-
-
-
-
-
-
-
-
-
+#################3
     html.Div(
-        dcc.Graph(id="word_cloud", figure=create_wordcloud(), config={"displayModeBar": False, "displaylogo": False}),
+        dcc.Graph(id="word-cloud", figure=create_wordcloud(), config={"displayModeBar": False, "displaylogo": False}),
         style={"position": "absolute", "left": "700px", "top": "500px", "width": "800px", "height": "380px", "borderTop": "1px solid lightgray", "zIndex": 2}
     ),
 
-
-
-
-
-
-
-
-
-
+##################
     html.Div(
         id="outside-click",
         style={"position": "absolute", "left": "0px", "top": "0px", "width": "90vw", "height": "90vh", "backgroundColor": "lavender", "zIndex": 0}
     )
 ])
 
+# active_cell changes in the Projects table
 @app.callback(
-    Output("gantt-chart", "figure"),
-    Output("data-table", "style_data_conditional"),
-    Input("data-table", "active_cell"),
-    Input("data-table", "data")
+    Output("gantt-chart", "figure"), # 1. update Gantt
+    Output("projects-table", "style_data_conditional"), # 2. update Projects
+    Output("roles-table", "style_data_conditional"), # 3. update Roles
+    Output("achievements-table", "data"), # 4. update Achievements
+    Output("tasks-table", "data"), # 5. update Tasks
+    Output("word-cloud", "figure"),  # 6. update Word cloud
+    Input("projects-table", "active_cell"),
+    Input("projects-table", "data")
 )
-def update_gantt_and_table(active_cell, table_data):
-    style_data_conditional = style_base.copy()
+def projects_table_callback(active_cell, data):
+    
+    # default outputs (no active_cell in Projects table)
     if active_cell is None:
-        return create_gantt(), style_data_conditional
+        return (create_gantt(), # 1
+                df_clients_style, # 2
+                df_roles_style, # 3
+                df_achievements.to_dict("records"), # 4
+                df_tasks.to_dict("records"), # 5
+                create_wordcloud()) # 6
+
     active_cell_row = active_cell["row"]
-    style_data_conditional.append({"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"})
-    return create_gantt(selected_client_order=table_data[active_cell_row]["Client_Order"], selected_client_row=active_cell_row), style_data_conditional
+    selected_client_order = data[active_cell_row]["Client_Order"]
+
+    df_clients_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
+
+    related_roles = df[df["Client_Order"] == selected_client_order]["Role"].unique()
+    df_roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
+
+    filtered_achievements = df[df["Client_Order"] == selected_client_order]["Achievement"].drop_duplicates().sort_values()
+
+    filtered_tasks = df[df["Client_Order"] == selected_client_order]["Task"].drop_duplicates().sort_values()
+
+    print(filtered_tasks)
+    print(type(filtered_tasks))
+
+    # conditional outputs (active_cell in Projects table)
+    return (create_gantt(selected_client_order=selected_client_order, selected_client_row=active_cell_row), # 1
+            df_clients_style + df_clients_style_conditional, # 2
+            df_roles_style + df_roles_style_conditional, # 3
+            pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"), # 4 - UNDERSTAND THIS
+            pd.DataFrame({"Task": filtered_tasks}).to_dict("records"), # 5 - UNDERSTAND THIS
+            create_wordcloud(selected_client_order=selected_client_order)) # 6
 
 @app.callback(
-    Output("role-table", "style_data_conditional"),
-    Input("data-table", "active_cell"),
-    Input("data-table", "data")
-)
-def update_roles(active_cell, table_rows):
-    if not active_cell:
-        return role_style  # keep default font sizes
-    active_cell_row = active_cell["row"]
-    client_order_value = table_rows[active_cell_row]["Client_Order"]
-    related_roles = df[df["Client_Order"] == client_order_value]["Role"].unique()
-    highlight_style = [
-        {
-            "if": {"filter_query": f'{{Role}} = "{role}"'},
-            "backgroundColor": "lightblue",
-        }
-        for role in related_roles
-    ]
-    return role_style + highlight_style
-
-@app.callback(
-    Output("achievements-table", "data"),
-    Input("data-table", "active_cell"),
-    Input("data-table", "data")
-)
-def filter_achievements(active_cell, table_data):
-    if active_cell is None:
-        return df_achievements.to_dict("records")
-    row_clicked = active_cell["row"]
-    selected_client = table_data[row_clicked]["Client_Name_Full"]
-    filtered_achievements = df[df["Client_Name_Full"] == selected_client]["Achievement"].drop_duplicates().sort_values()
-    return pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records")
-
-@app.callback(
-    Output("tasks-table", "data"),
-    Input("data-table", "active_cell"),
-    Input("data-table", "data")
-)
-def filter_tasks(active_cell, table_data):
-    if active_cell is None:
-        return df_tasks.to_dict("records")
-    row_clicked = active_cell["row"]
-    selected_client = table_data[row_clicked]["Client_Name_Full"]
-    filtered_tasks = df[df["Client_Name_Full"] == selected_client]["Task"].drop_duplicates().sort_values()
-    return pd.DataFrame({"Task": filtered_tasks}).to_dict("records")
-
-@app.callback(
-    Output("data-table", "active_cell"),
+    Output("projects-table", "active_cell"),
     Input("outside-click", "n_clicks"),
     prevent_initial_call=True
 )
