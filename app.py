@@ -1,9 +1,9 @@
 import pandas as pd
 import plotly.express as px
 from dash import Dash, html, dcc, dash_table, Input, Output
-import random
 
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
+df_coordinates = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/word_cloud_coordinates.csv")
 
 df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates().sort_values(by='Client_Order')
 df_clients_style = [
@@ -31,14 +31,6 @@ df_achievements = df[['Achievement', 'Achievement_Priority']].drop_duplicates().
 
 df_tasks = df[['Task', 'Task_Priority']].drop_duplicates().sort_values(by='Task_Priority')
 
-
-
-
-
-
-
-
-# Filter rows with non-empty Tool info and remove duplicates
 df_tools = df[["Tool", "Tool_Type", "Tool_Size"]].drop_duplicates()
 tool_type_colors = {
     "BI": "rgb(200,82,0)",
@@ -53,75 +45,43 @@ tool_type_colors_2 = {
     "misc": "rgb(248,248,248)"
 }
 df_tools["Color"] = df_tools["Tool_Type"].map(tool_type_colors).fillna("black")
-
+df_tools = df_tools.merge(df_coordinates, on="Tool", how="left")
 size_min, size_max = 10, 24
 tool_sizes = df_tools["Tool_Size"]
 size_scaled = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - tool_sizes.min()) * (size_max - size_min)) + size_min
-tools_count = len(df_tools)
-random.seed(42)
-x_gap = 15
-y_gap = 5
-def rand_custom_x():
-    return random.gauss(0.5, 0.15)
-def rand_custom_y():
-    return random.gauss(0.5, 0.15)
-df_tools["x_pos"] = [rand_custom_x() for _ in range(tools_count)]
-df_tools["y_pos"] = [rand_custom_y() for _ in range(tools_count)]
-df_tools["len"] = df_tools["Tool"].str.len()
 
-counter2 = 0
-while 1 == 1 :
-    counter = 0
-    for i in range(tools_count):
-        for j in range(tools_count):
-            if  i > j:
-                i_x_loc = df_tools.iloc[i, 4]
-                i_y_loc = df_tools.iloc[i, 5]
-                j_x_loc = df_tools.iloc[j, 4]
-                j_y_loc = df_tools.iloc[j, 5]
-                if abs(i_x_loc - j_x_loc) < x_gap/100 and abs(i_y_loc - j_y_loc) < y_gap/100:
-                    df_tools.iloc[i, 4] = rand_custom_x()
-                    df_tools.iloc[i, 5] = rand_custom_y()
-                    counter += 1
-    counter2 += 1
-    if counter == 0:
-        break
-print(counter2)
-
-df_tools.to_csv("word_cloud_coordinates.csv", index=False)
-
-###################
 
 def create_wordcloud(selected_client_order=None):
     df_plot = df_tools.copy()
     if selected_client_order is not None:
-        related_tools = df[df["Client_Order"] == selected_client_order]["Tool"].drop_duplicates()
-        print(f'{related_tools}')
-        print(f'{type(related_tools)}')
-
-
-        # df_plot.loc[df_plot['Client_Order'] == selected_client_order, 'color'] = 'dimgray'
-        # pd.DataFrame({"Task": filtered_tasks}).to_dict("records"),  # 5 - UNDERSTAND THIS
+        related_tools = df[df["Client_Order"] == selected_client_order]["Tool"].drop_duplicates().tolist()
+        df_plot["Color"] = df_plot.apply(
+            lambda row: tool_type_colors[row["Tool_Type"]] if row["Tool"] in related_tools
+            else tool_type_colors_2[row["Tool_Type"]],
+            axis=1
+        )
 
     fig = px.scatter(
         df_plot,
         x=df_plot["x_pos"],
         y=df_plot["y_pos"],
-        text="Tool"
+        text="Tool",
+        width=800,
+        height=380
     )
     fig.update_traces(
         mode="text",
         textposition="middle center",
         textfont_size=size_scaled,
         textfont_color=df_plot["Color"],
-        hovertemplate="x_pos: %{x}<br>y_pos: %{y}",
+        hovertemplate="Tool: %{text}<br>Type: %{customdata[0]}<br>Size: %{customdata[1]}",
         customdata=df_plot[["Tool_Type", "Tool_Size"]]
     )
     fig.update_layout(
-        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
-        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False, fixedrange=True),
+        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False, fixedrange=True),
         plot_bgcolor='white',
-        height=600,
+        autosize=False,
         margin=dict(l=10, r=10, t=10, b=10)
     )
     fig.update_yaxes(visible=False)
@@ -269,8 +229,14 @@ app.layout = html.Div([
 
 #################3
     html.Div(
-        dcc.Graph(id="word-cloud", figure=create_wordcloud(), config={"displayModeBar": False, "displaylogo": False}),
-        style={"position": "absolute", "left": "700px", "top": "500px", "width": "800px", "height": "380px", "borderTop": "1px solid lightgray", "zIndex": 2}
+        dcc.Graph(
+            id="word-cloud",
+            figure=create_wordcloud(),
+            config={"displayModeBar": False, "displaylogo": False},
+            style={"width": "800px", "height": "380px"}   # fixed container size
+        ),
+        style={"position": "absolute", "left": "700px", "top": "500px", "width": "800px", "height": "380px",
+               "borderTop": "1px solid lightgray", "zIndex": 2}
     ),
 
 ##################
