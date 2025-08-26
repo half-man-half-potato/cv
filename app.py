@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.express as px
-from dash import Dash, html, dcc, dash_table, Input, Output
+from dash import Dash, html, dcc, dash_table, Input, Output, no_update
+from dash.exceptions import PreventUpdate
 
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
 df_coordinates = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/word_cloud_coordinates.csv")
@@ -12,6 +13,7 @@ df_clients_style = [
     {"if": {"state": "selected", "row_index": "even"}, "backgroundColor": "white", "border": "none"},
     {"if": {"row_index": "odd"}, "backgroundColor": "whitesmoke"},
 ]
+clients_orders_list = df["Client_Order"].drop_duplicates().sort_values().tolist()
 
 df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer']].drop_duplicates().sort_values(by='Client_Order', ascending=False)
 df_gantt['Start_Date'] = pd.to_datetime(df_gantt['Start_Date'])
@@ -89,15 +91,17 @@ def create_wordcloud(selected_client_order=None):
     fig.update_xaxes(visible=False)
 
     return fig
-#####################
 
-def create_gantt(selected_client_order=None, selected_client_row=None):
+
+def create_gantt(selected_client_order=None):
     df_plot = df_gantt.copy()
     if selected_client_order is not None:
         df_plot.loc[df_plot['Client_Order'] == selected_client_order, 'color'] = 'dimgray'
 
     names_reversed = df_plot["Client_Name_Full"].tolist()[::-1]
     category_order = list(dict.fromkeys(names_reversed))
+
+    selected_client_row = clients_orders_list.index(selected_client_order) if selected_client_order is not None else None
 
     fig = px.timeline(
         df_plot,
@@ -111,7 +115,7 @@ def create_gantt(selected_client_order=None, selected_client_row=None):
 
     shapes = []
     for i in range(len(category_order)):
-        if selected_client_order is not None and i == len(category_order) - selected_client_row - 1:
+        if selected_client_order is not None and i == len(category_order) - selected_client_row - 1: # ToDo: replace selected_client_order with a list
             shapes.append({
                 "type": "rect",
                 "xref": "paper",
@@ -227,8 +231,6 @@ app.layout = html.Div([
         ),
         style={"position": "absolute", "left": "20px", "top": "700px", "width": "650px", "height": "180px", "zIndex": 2}
     ),
-
-#################3
     html.Div(
         dcc.Graph(
             id="word-cloud",
@@ -239,19 +241,41 @@ app.layout = html.Div([
         style={"position": "absolute", "left": "700px", "top": "500px", "width": "800px", "height": "380px",
                "borderTop": "1px solid lightgray", "zIndex": 2}
     ),
-
-##################
     html.Div(
         id="outside-click",
         style={"position": "absolute", "left": "0px", "top": "0px", "width": "90vw", "height": "90vh", "backgroundColor": "lavender", "zIndex": 0}
     )
 ])
 
-# active_cell changes in the Projects table
+###################################################
+#################### CALLBACKS ####################
+###################################################
+
+
+# 1. PROJECTS table: if a User clicks on the Projects table:
+
+
+# 1.a. deactivate/unselect active/selected cells in other elements
+@app.callback(
+    Output("roles-table", "active_cell", allow_duplicate=True),
+    Output("roles-table", "selected_cells", allow_duplicate=True),
+    Input("projects-table", "active_cell"),
+    prevent_initial_call=True
+)
+def projects_table_deactivate(active_cell):
+    if active_cell is None:
+        # print(f'projects_table_deactivate: active_cell is None\n')
+        raise PreventUpdate
+
+    # print(f'projects_table_deactivate: active_cell is NOT None\n')
+    return None, []
+
+
+# 1-b. update formatting in other elements
 @app.callback(
     Output("gantt-chart", "figure"), # 1. update Gantt
-    Output("projects-table", "style_data_conditional"), # 2. update Projects
-    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. update Roles
+    Output("projects-table", "style_data_conditional", allow_duplicate=True), # 2. update Projects
+    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3-a. ROLES update
     Output("achievements-table", "data"), # 4. update Achievements
     Output("tasks-table", "data"), # 5. update Tasks
     Output("word-cloud", "figure"),  # 6. update Word cloud
@@ -259,19 +283,21 @@ app.layout = html.Div([
     Input("projects-table", "data"),
     prevent_initial_call=True
 )
-def projects_table_callback(active_cell, data):
-    
+def projects_table_update(active_cell, data):
+
     # default outputs (no active_cell in Projects table)
     if active_cell is None:
+        # print(f'projects_table_update: active_cell is None\n')
         return (
                 create_gantt(), # 1
-                df_clients_style, # 2
-                df_roles_style, # 3
+                no_update, # 2
+                no_update, # 3-a
                 df_achievements.to_dict("records"), # 4
                 df_tasks.to_dict("records"), # 5
                 create_wordcloud() # 6
                 )
 
+    # conditional outputs (active_cell in Projects table)
     active_cell_row = active_cell["row"]
     selected_client_order = data[active_cell_row]["Client_Order"]
 
@@ -284,59 +310,75 @@ def projects_table_callback(active_cell, data):
 
     filtered_tasks = df[df["Client_Order"] == selected_client_order]["Task"].drop_duplicates().sort_values()
 
-    # conditional outputs (active_cell in Projects table)
+    # print(f'projects_table_update: active_cell is NOT None\n')
+
     return (
-            create_gantt(selected_client_order=selected_client_order, selected_client_row=active_cell_row), # 1
+            create_gantt(selected_client_order=selected_client_order), # 1
             df_clients_style + df_clients_style_conditional, # 2
-            df_roles_style + df_roles_style_conditional, # 3
+            df_roles_style + df_roles_style_conditional, # 3-a
             pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"), # 4 - UNDERSTAND THIS
             pd.DataFrame({"Task": filtered_tasks}).to_dict("records"), # 5 - UNDERSTAND THIS
             create_wordcloud(selected_client_order=selected_client_order) # 6
             )
 
+
+# 2. ROLES table: if a User clicks on the Roles table:
+
+
+# 2.a. deactivate/unselect active/selected cells in other elements
 @app.callback(
-    # Output("gantt-chart", "figure"), # 1. update Gantt
-    # Output("projects-table", "style_data_conditional"), # 2. update Projects
-    Output("projects-table", "active_cell", allow_duplicate=True), # new
-    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. update Roles
-    # Output("achievements-table", "data"), # 4. update Achievements
-    # Output("tasks-table", "data"), # 5. update Tasks
-    # Output("word-cloud", "figure"),  # 6. update Word cloud
+    Output("projects-table", "active_cell", allow_duplicate=True),
+    Output("projects-table", "selected_cells", allow_duplicate=True),
+    Input("roles-table", "active_cell"),
+    prevent_initial_call=True
+)
+def roles_table_deactivate(active_cell):
+    if active_cell is None:
+        # print(f'roles_table_deactivate: active_cell is None\n')
+        raise PreventUpdate
+
+    # print(f'roles_table_deactivate: active_cell is NOT None\n')
+    return None, []
+
+
+# 2.b. update formatting in other elements
+@app.callback(
+    Output("projects-table", "style_data_conditional", allow_duplicate=True),  # 2
+    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3-a. ROLES update
     Input("roles-table", "active_cell"),
     Input("roles-table", "data"),
     prevent_initial_call=True
 )
-def roles_table_callback(active_cell, data):
+def roles_table_update(active_cell, data):
     if active_cell is None:
+        # print(f'roles_table_update: active_cell is None\n')
         return (
-                # create_gantt(), # 1
-                # df_clients_style, # 2
-                None, # new
-                df_roles_style, # 3
-                # df_achievements.to_dict("records"), # 4
-                # df_tasks.to_dict("records"), # 5
-                # create_wordcloud() # 6
+                df_clients_style,
+                df_roles_style # 3-a
                 )
+
     active_cell_row = active_cell["row"]
     selected_role = data[active_cell_row]["Role"]
+
+    related_client_orders = df[df["Role"] == selected_role]["Client_Order"].unique()
+    df_clients_style_conditional = [{"if": {"filter_query": f'{{Client_Order}} = "{order}"'}, "backgroundColor": "lightblue"} for order in related_client_orders]
+
     df_roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{selected_role}"'}, "backgroundColor": "lightblue"}]
 
+    # print(f'roles_table_update: active_cell is NOT None\n')
+
     return (
-            # create_gantt(selected_client_order=selected_client_order, selected_client_row=active_cell_row), # 1
-            # df_clients_style + df_clients_style_conditional, # 2
-            None,
-            df_roles_style + df_roles_style_conditional, # 3
-            # pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"), # 4 - UNDERSTAND THIS
-            # pd.DataFrame({"Task": filtered_tasks}).to_dict("records"), # 5 - UNDERSTAND THIS
-            # create_wordcloud(selected_client_order=selected_client_order) # 6
+            df_clients_style + df_clients_style_conditional, # 2
+            df_roles_style + df_roles_style_conditional # 3-a
             )
 
 @app.callback(
     Output("projects-table", "active_cell", allow_duplicate=True),
-    Output("roles-table", "active_cell"),
+    Output("roles-table", "active_cell", allow_duplicate=True),
     Input("outside-click", "n_clicks"),
     prevent_initial_call=True
 )
 def clear_active_cell(n_clicks):
+    # print(f'clear_active_cell\n')
     return None, None
 
