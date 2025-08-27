@@ -6,6 +6,8 @@ from dash.exceptions import PreventUpdate
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
 df_coordinates = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/word_cloud_coordinates.csv")
 
+# wtf
+
 df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates().sort_values(by='Client_Order')
 df_clients_style = [
     {"if": {"state": "active"}, "backgroundColor": "lightblue"},
