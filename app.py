@@ -22,7 +22,7 @@ df_role_to_tool = pd.read_csv("https://raw.githubusercontent.com/half-man-half-p
 
 # Clients table
 df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates().sort_values(by='Client_Order')
-df_clients_style = [
+clients_style = [
     {"if": {"state": "active"}, "backgroundColor": "lightblue"},
     {"if": {"state": "selected", "row_index": "odd"}, "backgroundColor": "whitesmoke", "border": "none"},
     {"if": {"state": "selected", "row_index": "even"}, "backgroundColor": "white", "border": "none"},
@@ -42,11 +42,11 @@ all_clients_orders = df[["Client_Order"]].drop_duplicates().sort_values(by='Clie
 
 # Roles table
 df_roles = df[['Role', 'Role_Font_Size']].drop_duplicates().sort_values(by='Role')
-df_roles_style = [
+roles_style = [
     {"if": {"filter_query": f'{{Role}} = "{row["Role"]}"'}, "fontSize": f'{row["Role_Font_Size"]}px'}
     for _, row in df_roles.iterrows()
 ]
-df_roles_style += [
+roles_style += [
     {"if": {"state": "active"}, "backgroundColor": "lightblue"},
     {"if": {"state": "selected"}, "backgroundColor": "white", "border": "none"},
 ]
@@ -86,7 +86,8 @@ size_scaled = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - tool_sizes.
 #########################################################################################################################################################
 
 
-def create_wordcloud(selected_client_order=None, selected_role=None, selected_tool=None): # ToDo: increase font size by 1 for the selected tools? (don't change the default view)
+def create_wordcloud(selected_client_order=None, selected_role=None, selected_tool=None, selected_task=None, selected_achievement=None):
+    # ToDo: increase font size by 1 for the selected tools? (don't change the default view)
     df_plot = df_tools.copy()
 
     # dim colors for the unrelated items (if any)
@@ -99,7 +100,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
             tool_type_colors_2[row["Tool_Type"]],
             axis=1
         )
-    if selected_role is not None: # if triggered by the User clicking on the Roles table
+    elif selected_role is not None: # if triggered by the User clicking on the Roles table
         related_tools = df_role_to_tool[df_role_to_tool["Role"] == selected_role]["Tool"].drop_duplicates().tolist()
         df_plot["Color"] = df_plot.apply(
             lambda row:
@@ -108,7 +109,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
             tool_type_colors_2[row["Tool_Type"]],
             axis=1
         )
-    if selected_tool is not None: # if triggered by the User clicking on the Word cloud
+    elif selected_tool is not None: # if triggered by the User clicking on the Word cloud
         df_plot["Color"] = df_plot.apply(
             lambda row:
             tool_type_colors[row["Tool_Type"]] if row["Tool"] == selected_tool
@@ -116,6 +117,24 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
             tool_type_colors_2[row["Tool_Type"]],
             axis=1
         )
+    elif selected_task is not None: # if triggered by the User clicking on the Tasks table
+        related_tools = df[df["Task"] == selected_task]["Tool"].drop_duplicates().tolist()
+        df_plot["Color"] = df_plot.apply(
+            lambda row:
+            tool_type_colors[row["Tool_Type"]] if row["Tool"] in related_tools
+            else
+            tool_type_colors_2[row["Tool_Type"]],
+            axis=1
+        )
+    elif selected_achievement is not None:  # if triggered by the User clicking on the Tasks table
+        related_tools = df[df["Achievement"] == selected_achievement]["Tool"].drop_duplicates().tolist()
+        df_plot["Color"] = df_plot.apply(
+            lambda row:
+            tool_type_colors[row["Tool_Type"]] if row["Tool"] in related_tools
+            else
+            tool_type_colors_2[row["Tool_Type"]],
+            axis=1
+    )
 
     fig = px.scatter(
         df_plot,
@@ -146,7 +165,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
     return fig
 
 
-def create_gantt(selected_client_order=None, selected_role=None, selected_tool=None):
+def create_gantt(selected_client_order=None, selected_role=None, selected_tool=None, selected_task=None, selected_achievement=None):
     df_plot = df_gantt.copy()
 
     # apply darker gray color to the highlighted Gantt bars (if any)
@@ -157,6 +176,12 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
         df_plot.loc[df_plot['Client_Order'].isin(related_client_orders), 'color'] = 'dimgray'
     elif selected_tool is not None:
         related_client_orders = df[df["Tool"] == selected_tool]["Client_Order"].unique()
+        df_plot.loc[df_plot['Client_Order'].isin(related_client_orders), 'color'] = 'dimgray'
+    elif selected_task is not None:
+        related_client_orders = df[df["Task"] == selected_task]["Client_Order"].unique()
+        df_plot.loc[df_plot['Client_Order'].isin(related_client_orders), 'color'] = 'dimgray'
+    elif selected_achievement is not None:
+        related_client_orders = df[df["Achievement"] == selected_achievement]["Client_Order"].unique()
         df_plot.loc[df_plot['Client_Order'].isin(related_client_orders), 'color'] = 'dimgray'
 
     clients_list = list(dict.fromkeys(df_plot["Client_Name_Full"].tolist()[::-1]))
@@ -188,21 +213,8 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
                 "layer": "below",
                 "line": {"width": 0}
             })
-        elif selected_role is not None:  # if triggered by the User clicking on the Roles table
-            if all_clients_orders[i] in related_client_orders:
-                shapes.append({
-                    "type": "rect",
-                    "xref": "paper",
-                    "yref": "y",
-                    "x0": 0,
-                    "x1": 1,
-                    "y0": i - 0.5,
-                    "y1": i + 0.5,
-                    "fillcolor": "rgba(173, 216, 230, 1)",
-                    "layer": "below",
-                    "line": {"width": 0}
-                })
-        elif selected_tool is not None:  # if triggered by the User clicking on the Word cloud
+        elif selected_role is not None or selected_tool is not None or selected_task is not None or selected_achievement is not None:
+            # if triggered by the User clicking on the Roles/Tools/Tasks/Achievements table
             if all_clients_orders[i] in related_client_orders:
                 shapes.append({
                     "type": "rect",
@@ -281,7 +293,7 @@ app.layout = html.Div([
             style_table={"height": "500px", "overflowY": "auto"},
             style_cell={"textAlign": "left", "border": "none"},
             style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
-            style_data_conditional=df_clients_style,
+            style_data_conditional=clients_style,
             css=[{"selector": ".show-hide", "rule": "display: none"}],
         ),
         style={"position": "absolute", "left": "305px", "top": "0px", "width": "850px", "height": "500px", "zIndex": 3}
@@ -293,7 +305,7 @@ app.layout = html.Div([
             columns=[{"name": "Role", "id": "Role"}],
             style_cell={"textAlign": "left", "border": "none"},
             style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
-            style_data_conditional=df_roles_style,
+            style_data_conditional=roles_style,
             style_table={"overflowY": "auto", "height": "500px"},
         ),
         style={"position": "absolute", "left": "1180px", "top": "0px", "width": "300px", "height": "500px", "zIndex": 2}
@@ -306,6 +318,7 @@ app.layout = html.Div([
             style_cell={"textAlign": "left", "border": "none"},
             style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
             style_table={"overflowY": "auto", "height": "180px"},
+            style_data_conditional=clients_style,
             fixed_rows={'headers': True},
         ),
         style={"position": "absolute", "left": "20px", "top": "500px", "width": "650px", "height": "180px", "zIndex": 2}
@@ -318,6 +331,7 @@ app.layout = html.Div([
             style_cell={"textAlign": "left", "border": "none"},
             style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "gray", "backgroundColor": "white"},
             style_table={"overflowY": "auto", "height": "180px"},
+            style_data_conditional=clients_style,
             fixed_rows={'headers': True},
         ),
         style={"position": "absolute", "left": "20px", "top": "700px", "width": "650px", "height": "180px", "zIndex": 2}
@@ -348,21 +362,31 @@ app.layout = html.Div([
 #__________________________________________________
 
 
+global callback_counter
+callback_counter = 0
+
+
 # 1.a. deactivate/unselect active/selected cells in other elements
 @app.callback(
     Output("roles-table", "active_cell", allow_duplicate=True),
     Output("roles-table", "selected_cells", allow_duplicate=True),
+    Output("achievements-table", "active_cell", allow_duplicate=True),
+    Output("achievements-table", "selected_cells", allow_duplicate=True),
+    Output("tasks-table", "active_cell", allow_duplicate=True),
+    Output("tasks-table", "selected_cells", allow_duplicate=True),
     Input("projects-table", "active_cell"),
     prevent_initial_call=True
 )
 def projects_table_deactivate(active_cell):
+    global callback_counter
+    callback_counter += 1
 
     if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
-        # print(f'projects_table_deactivate: active_cell is {active_cell}\n')
+        print(f'{callback_counter}.: projects_table_deactivate: active_cell is {active_cell}\n')
         raise PreventUpdate ## 1-6
 
-    # print(f'projects_table_deactivate: active_cell is {active_cell}\n')
-    return None, []
+    print(f'{callback_counter}.: projects_table_deactivate: active_cell is NOT None\n')
+    return None, [], None, [], None, []
 
 
 # 1-b. update formatting in other elements
@@ -378,28 +402,31 @@ def projects_table_deactivate(active_cell):
     prevent_initial_call=True
 )
 def projects_table_update(active_cell, data):
+    global callback_counter
+    callback_counter += 1
+
     if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
-        # print(f'projects_table_update: active_cell is {active_cell}\n')
+        print(f'{callback_counter}.: projects_table_update: active_cell is {active_cell}\n')
         raise PreventUpdate ## 1-6
 
     active_cell_row = active_cell["row"]
     selected_client_order = data[active_cell_row]["Client_Order"]
 
-    df_clients_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
+    clients_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
 
     related_roles = df[df["Client_Order"] == selected_client_order]["Role"].unique()
-    df_roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
+    roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
 
     filtered_achievements = df[df["Client_Order"] == selected_client_order]["Achievement"].drop_duplicates().sort_values()
 
     filtered_tasks = df[df["Client_Order"] == selected_client_order]["Task"].drop_duplicates().sort_values()
 
-    # print(f'projects_table_update: active_cell is {active_cell}\n')
+    print(f'{callback_counter}.: projects_table_update: active_cell is NOT None\n')
 
     return (
             create_gantt(selected_client_order=selected_client_order), # 1
-            df_clients_style + df_clients_style_conditional, # 2
-            df_roles_style + df_roles_style_conditional, # 3
+            clients_style + clients_style_conditional, # 2
+            roles_style + roles_style_conditional, # 3
             pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"), # 4 - UNDERSTAND THIS ToDo
             pd.DataFrame({"Task": filtered_tasks}).to_dict("records"), # 5 - UNDERSTAND THIS ToDo
             create_wordcloud(selected_client_order=selected_client_order) # 6
@@ -415,16 +442,23 @@ def projects_table_update(active_cell, data):
 @app.callback(
     Output("projects-table", "active_cell", allow_duplicate=True),
     Output("projects-table", "selected_cells", allow_duplicate=True),
+    Output("achievements-table", "active_cell", allow_duplicate=True),
+    Output("achievements-table", "selected_cells", allow_duplicate=True),
+    Output("tasks-table", "active_cell", allow_duplicate=True),
+    Output("tasks-table", "selected_cells", allow_duplicate=True),
     Input("roles-table", "active_cell"),
     prevent_initial_call=True
 )
 def roles_table_deactivate(active_cell):
+    global callback_counter
+    callback_counter += 1
+
     if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
-        # print(f'roles_table_deactivate: active_cell is {active_cell}\n')
+        print(f'{callback_counter}.: roles_table_deactivate: active_cell is {active_cell}\n')
         raise PreventUpdate ## 1-6
 
-    # print(f'roles_table_deactivate: active_cell is {active_cell}\n')
-    return None, []
+    print(f'{callback_counter}.: roles_table_deactivate: active_cell is NOT None\n')
+    return None, [], None, [], None, []
 
 
 # 2.b. update formatting in other elements
@@ -440,28 +474,31 @@ def roles_table_deactivate(active_cell):
     prevent_initial_call=True
 )
 def roles_table_update(active_cell, data):
+    global callback_counter
+    callback_counter += 1
+
     if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
-        # print(f'roles_table_update: active_cell is {active_cell}\n')
+        print(f'{callback_counter}.: roles_table_update: active_cell is {active_cell}\n')
         raise PreventUpdate ## 1-6
 
     active_cell_row = active_cell["row"]
     selected_role = data[active_cell_row]["Role"]
 
     related_client_orders = df[df["Role"] == selected_role]["Client_Order"].unique()
-    df_clients_style_conditional = [{"if": {"filter_query": f'{{Client_Order}} = "{order}"'}, "backgroundColor": "lightblue"} for order in related_client_orders]
+    clients_style_conditional = [{"if": {"filter_query": f'{{Client_Order}} = "{order}"'}, "backgroundColor": "lightblue"} for order in related_client_orders]
 
-    df_roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{selected_role}"'}, "backgroundColor": "lightblue"}]
+    roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{selected_role}"'}, "backgroundColor": "lightblue"}]
 
     filtered_achievements = df_role_to_achievement[df_role_to_achievement["Role"] == selected_role]["Achievement"].drop_duplicates().sort_values()
 
     filtered_tasks = df_role_to_task[df_role_to_task["Role"] == selected_role]["Task"].drop_duplicates().sort_values()
 
-    # print(f'roles_table_update: active_cell is {active_cell}\n')
+    print(f'{callback_counter}.: roles_table_update: active_cell is NOT None\n')
 
     return (
             create_gantt(selected_role=selected_role),  # 1
-            df_clients_style + df_clients_style_conditional, # 2
-            df_roles_style + df_roles_style_conditional, # 3
+            clients_style + clients_style_conditional, # 2
+            roles_style + roles_style_conditional, # 3
             pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"),  # 4
             pd.DataFrame({"Task": filtered_tasks}).to_dict("records"),  # 5
             create_wordcloud(selected_role=selected_role)  # 6
@@ -479,20 +516,26 @@ def roles_table_update(active_cell, data):
     Output("projects-table", "selected_cells", allow_duplicate=True),
     Output("roles-table", "active_cell", allow_duplicate=True),
     Output("roles-table", "selected_cells", allow_duplicate=True),
+    Output("achievements-table", "active_cell", allow_duplicate=True),
+    Output("achievements-table", "selected_cells", allow_duplicate=True),
+    Output("tasks-table", "active_cell", allow_duplicate=True),
+    Output("tasks-table", "selected_cells", allow_duplicate=True),
     Input("word-cloud", "clickData"),
     prevent_initial_call=True
 )
 def word_cloud_deactivate(clickData):
+    global callback_counter
+    callback_counter += 1
 
     if clickData is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
-        # print(f'word_cloud_deactivate: clickData is {active_cell}\n')
+        print(f'{callback_counter}.: word_cloud_deactivate: clickData is {clickData}\n')
         raise PreventUpdate
 
-    # print(f'word_cloud_deactivate: clickData is {active_cell}\n')
-    return None, [], None, []
+    print(f'{callback_counter}.: word_cloud_deactivate: clickData is NOT None\n')
+    return None, [], None, [], None, [], None, []
 
 
-# # 3.b. update formatting in other elements
+# 3.b. update formatting in other elements
 @app.callback(
     Output("gantt-chart", "figure", allow_duplicate=True),  # 1 Gantt
     Output("projects-table", "style_data_conditional", allow_duplicate=True), # 2 Clients
@@ -504,24 +547,26 @@ def word_cloud_deactivate(clickData):
     prevent_initial_call=True
 )
 def word_cloud_update(clickData):
+    global callback_counter
+    callback_counter += 1
 
-    print(f'clickData: \n {json.dumps(clickData, indent=2)}')
+    # print(f'clickData: \n {json.dumps(clickData, indent=2)}')
 
     if clickData is None:
-        # print(f'word_cloud_update: clickData is {active_cell}\n')
+        print(f'{callback_counter}.: word_cloud_update: clickData is {clickData}\n')
         raise PreventUpdate ##1-6
 
     # print(json.dumps(clickData, indent=2))
 
-    # print(f'word_cloud_update: clickData is {active_cell}\n')
+    print(f'{callback_counter}.: word_cloud_update: clickData is NOT None\n')
 
     selected_tool = clickData["points"][0]["text"]
     related_client_orders = df[df["Tool"] == selected_tool]["Client_Order"].drop_duplicates().tolist()
 
-    df_clients_style_conditional = [{"if": {"filter_query": f'{{Client_Order}} = "{order}"'}, "backgroundColor": "lightblue"} for order in related_client_orders]
+    clients_style_conditional = [{"if": {"filter_query": f'{{Client_Order}} = "{order}"'}, "backgroundColor": "lightblue"} for order in related_client_orders]
 
     related_roles = df_role_to_tool[df_role_to_tool["Tool"] == selected_tool]["Role"].unique()
-    df_roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
+    roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
 
     filtered_achievements = df[df["Tool"] == selected_tool]["Achievement"].drop_duplicates().sort_values() # ToDo: create new relations
 
@@ -529,11 +574,159 @@ def word_cloud_update(clickData):
 
     return (
             create_gantt(selected_tool=selected_tool),  # 1
-            df_clients_style + df_clients_style_conditional, # 2
-            df_roles_style + df_roles_style_conditional,  # 3
+            clients_style + clients_style_conditional, # 2
+            roles_style + roles_style_conditional,  # 3
             pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"),  # 4
             pd.DataFrame({"Task": filtered_tasks}).to_dict("records"),  # 5
             create_wordcloud(selected_tool=selected_tool)  # 6
+            )
+
+
+#__________________________________________________
+# 4. TASKS: if the User clicks on the Task table:
+#__________________________________________________
+
+
+# 4.a. deactivate/unselect active/selected cells in other elements
+@app.callback(
+    Output("projects-table", "active_cell", allow_duplicate=True),
+    Output("projects-table", "selected_cells", allow_duplicate=True),
+    Output("roles-table", "active_cell", allow_duplicate=True),
+    Output("roles-table", "selected_cells", allow_duplicate=True),
+    Output("achievements-table", "active_cell", allow_duplicate=True),
+    Output("achievements-table", "selected_cells", allow_duplicate=True),
+    Input("tasks-table", "active_cell"),
+    prevent_initial_call=True
+)
+def tasks_deactivate(active_cell):
+    global callback_counter
+    callback_counter += 1
+
+    if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
+        print(f'{callback_counter}.: tasks_deactivate: active_cell is {active_cell}\n')
+        raise PreventUpdate
+
+    print(f'{callback_counter}.: tasks_deactivate: active_cell is NOT None\n')
+    return None, [], None, [], None, []
+
+
+# 4.b. update formatting in other elements
+@app.callback(
+    Output("gantt-chart", "figure", allow_duplicate=True), # 1. Gantt
+    Output("projects-table", "style_data_conditional", allow_duplicate=True), # 2. Projects
+    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. Roles
+    Output("achievements-table", "data", allow_duplicate=True), # 4. Achievements
+    Output("tasks-table", "style_data_conditional", allow_duplicate=True), # 5. Tasks Comment: NEW
+    Output("word-cloud", "figure", allow_duplicate=True),  # 6. Word cloud
+    Input("tasks-table", "active_cell"),
+    Input("tasks-table", "data"),
+    prevent_initial_call=True
+)
+def tasks_update(active_cell, data):
+    global callback_counter
+    callback_counter += 1
+
+    if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
+        print(f'{callback_counter}.: tasks_update: active_cell is {active_cell}\n')
+        raise PreventUpdate ## 1-6
+
+    active_cell_row = active_cell["row"]
+    selected_task = data[active_cell_row]["Task"]
+
+    related_client_orders = df[df["Task"] == selected_task]["Client_Order"].unique()
+    clients_style_conditional = [{"if": {"filter_query": f'{{Client_Order}} = "{order}"'}, "backgroundColor": "lightblue"} for order in related_client_orders]
+
+    related_roles = df[df["Task"] == selected_task]["Role"].unique()
+    roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
+
+    tasks_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
+
+    filtered_achievements = df[df["Task"] == selected_task]["Achievement"].drop_duplicates().sort_values() # ToDo: add new ralations
+
+    print(f'{callback_counter}.: tasks_update: active_cell is NOT None\n')
+
+    return (
+            create_gantt(selected_task=selected_task), # 1
+            clients_style + clients_style_conditional, # 2
+            roles_style + roles_style_conditional, # 3
+            pd.DataFrame({"Achievement": filtered_achievements}).to_dict("records"), # 4
+            clients_style + tasks_style_conditional, # 5 Comment: NEW
+            create_wordcloud(selected_task=selected_task) # 6
+            )
+
+
+#__________________________________________________
+# 5. ACHIEVEMENTS: if the User clicks on the Achievements table:
+#__________________________________________________
+
+
+# 5.a. deactivate/unselect active/selected cells in other elements
+@app.callback(
+    Output("projects-table", "active_cell", allow_duplicate=True),
+    Output("projects-table", "selected_cells", allow_duplicate=True),
+    Output("roles-table", "active_cell", allow_duplicate=True),
+    Output("roles-table", "selected_cells", allow_duplicate=True),
+    Output("tasks-table", "active_cell", allow_duplicate=True),
+    Output("tasks-table", "selected_cells", allow_duplicate=True),
+    Input("achievements-table", "active_cell"),
+    prevent_initial_call=True
+)
+def achievements_deactivate(active_cell):
+    global callback_counter
+    callback_counter += 1
+
+    if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
+        print(f'{callback_counter}.: achievements_deactivate: active_cell is {active_cell}\n')
+        raise PreventUpdate
+
+    print(f'{callback_counter}.: achievements_deactivate: active_cell is NOT None\n')
+    return None, [], None, [], None, []
+
+
+# 5.b. update formatting in other elements
+@app.callback(
+    Output("gantt-chart", "figure", allow_duplicate=True), # 1. Gantt
+    Output("projects-table", "style_data_conditional", allow_duplicate=True), # 2. Projects
+    Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. Roles
+    Output("achievements-table", "style_data_conditional", allow_duplicate=True), # 4. Achievements  Comment: NEW
+    Output("tasks-table", "data", allow_duplicate=True), # 5. Tasks
+    Output("word-cloud", "figure", allow_duplicate=True),  # 6. Word cloud
+    Input("achievements-table", "active_cell"),
+    Input("achievements-table", "data"),
+    prevent_initial_call=True
+)
+def achievements_update(active_cell, data):
+    global callback_counter
+    callback_counter += 1
+
+    if active_cell is None: # if triggered by a chained callback instead, do not update the callback output(s) and exit the function
+        print(f'{callback_counter}.: achievements_update: active_cell is {active_cell}\n')
+        raise PreventUpdate ## 1-6
+
+    active_cell_row = active_cell["row"]
+    selected_achievement = data[active_cell_row]["Achievement"]
+
+    related_client_orders = df[df["Achievement"] == selected_achievement]["Client_Order"].unique()
+    clients_style_conditional = [{"if": {"filter_query": f'{{Client_Order}} = "{order}"'}, "backgroundColor": "lightblue"} for order in related_client_orders]
+
+    related_roles = df[df["Achievement"] == selected_achievement]["Role"].unique()
+    roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
+
+    achievements_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
+
+    filtered_tasks = df[df["Achievement"] == selected_achievement]["Task"].drop_duplicates().sort_values() # ToDo: add new relations
+
+    print(f'{callback_counter}.: achievements_update: active_cell is NOT None\n')
+
+    return (
+            create_gantt(selected_achievement=selected_achievement), # 1
+            clients_style + clients_style_conditional, # 2
+            roles_style + roles_style_conditional, # 3
+
+            clients_style + achievements_style_conditional,  # 4 Comment: NEW
+            pd.DataFrame({"Task": filtered_tasks}).to_dict("records"), # 5
+
+            create_wordcloud(selected_achievement=selected_achievement) # 6
             )
 
 
@@ -545,13 +738,22 @@ def word_cloud_update(clickData):
 # a. deactivate/unselect active/selected cells in other elements
 @app.callback(
     Output("projects-table", "active_cell", allow_duplicate=True),
+    Output("projects-table", "selected_cells", allow_duplicate=True),
     Output("roles-table", "active_cell", allow_duplicate=True),
+    Output("roles-table", "selected_cells", allow_duplicate=True),
+    Output("achievements-table", "active_cell", allow_duplicate=True),
+    Output("achievements-table", "selected_cells", allow_duplicate=True),
+    Output("tasks-table", "active_cell", allow_duplicate=True),
+    Output("tasks-table", "selected_cells", allow_duplicate=True),
     Input("background", "n_clicks"),
     prevent_initial_call=True
 )
 def background_deactivate(n_clicks):
-    # print(f'clear_active_cell_deactivate\n')
-    return None, None
+    global callback_counter
+    callback_counter += 1
+
+    print(f'{callback_counter}.: clear_active_cell_deactivate\n')
+    return None, [], None, [], None, [], None, []
 
 
 # b. set formatting to default in other elements
@@ -559,19 +761,26 @@ def background_deactivate(n_clicks):
     Output("gantt-chart", "figure", allow_duplicate=True),  # 1. Gantt
     Output("projects-table", "style_data_conditional", allow_duplicate=True),  # 2. Client
     Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. Roles
-    Output("achievements-table", "data", allow_duplicate=True),  # 4. Achievements
-    Output("tasks-table", "data", allow_duplicate=True),  # 5. Tasks
+    Output("achievements-table", "data", allow_duplicate=True),  # 4.1 Achievements: data (remove filters) Comment: NEW!
+    Output("achievements-table", "style_data_conditional", allow_duplicate=True),  # 4.2 Achievements: formatting (remove highlighting)  Comment: NEW!
+    Output("tasks-table", "data", allow_duplicate=True),  # 5.1 Tasks: data (remove filters) Comment: NEW!
+    Output("tasks-table", "style_data_conditional", allow_duplicate=True),  # 5.2 Tasks: formatting (remove highlighting)  Comment: NEW!
     Output("word-cloud", "figure", allow_duplicate=True),  # 6. Word cloud
     Input("background", "n_clicks"),
     prevent_initial_call=True
 )
 def background_update(n_clicks):
-    # print(f'clear_active_cell_update\n')
+    global callback_counter
+    callback_counter += 1
+
+    print(f'{callback_counter}.: clear_active_cell_update\n')
     return (
             create_gantt(), # 1
-            df_clients_style, # 2
-            df_roles_style, # 3
-            df_achievements.to_dict("records"), # 4
-            df_tasks.to_dict("records"), # 5
+            clients_style, # 2
+            roles_style, # 3
+            df_achievements.to_dict("records"), # 4.1  Comment: NEW
+            clients_style,  # 4.2 Comment: NEW
+            df_tasks.to_dict("records"), # 5.1  Comment: NEW!
+            clients_style,  # 5.2 Comment: NEW
             create_wordcloud() # 6
             )
