@@ -275,6 +275,10 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
 
 app = Dash(__name__)
 
+
+app.title = 'Yury Ulasenka | CV'
+
+
 app.layout = html.Div([
     html.Div(
         "Yury Ulasenka | Interactive Resume/CV",
@@ -310,26 +314,24 @@ app.layout = html.Div([
                         {"name": "Client_Order", "id": "Client_Order", "hideable": True}
                     ],
                     hidden_columns=["Client_Order"],
-                    # style_table={"height": "500px", "overflowY": "auto"},
                     style_cell={"textAlign": "left", "border": "none"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=clients_style,
                     css=[{"selector": ".show-hide", "rule": "display: none"}, {"selector": ".dash-spreadsheet tr", "rule": "height: 25px;"}],
                 ),
-                style={"position": "absolute", "left": "285px", "top": "0px", "width": "850px", "height": "375px", "backgroundColor": "mediumpurple", "zIndex": 3}
+                style={"position": "absolute", "left": "285px", "top": "0px", "width": "850px", "height": "375px", "zIndex": 3}
             ),
             html.Div(
                 dash_table.DataTable(
                     id="roles-table",
                     data=df_roles.to_dict("records"),
                     columns=[{"name": "Role", "id": "Role"}],
-                    style_cell={"textAlign": "left", "border": "none"},
+                    style_cell={"textAlign": "left", "border": "none", "color": "rgb(85,85,85)"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=roles_style,
-                    # style_table={"overflowY": "auto", "height": "500px"},
-                    css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 25px;"}],
+                    css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 29px;"}],
                 ),
-                style={"position": "absolute", "left": "1160px", "top": "0px", "width": "300px", "height": "325px", "backgroundColor": "mediumpurple", "zIndex": 2}
+                style={"position": "absolute", "left": "1160px", "top": "0px", "width": "300px", "height": "325px", "zIndex": 2}
             ),
         ],
         style={"position": "relative", "left": "0px", "top": "70px"},
@@ -454,7 +456,7 @@ def projects_table_update(active_cell, data):
     related_roles = df[df["Client_Order"] == selected_client_order]["Role"].unique()
     roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
 
-    filtered_achievements = df[df["Client_Order"] == selected_client_order]["Achievement"].drop_duplicates().sort_values()
+    filtered_achievements = df[df["Client_Order"] == selected_client_order]["Achievement"].drop_duplicates().dropna().sort_values()
 
     filtered_tasks = df[df["Client_Order"] == selected_client_order]["Task"].drop_duplicates().sort_values()
 
@@ -526,7 +528,7 @@ def roles_table_update(active_cell, data):
 
     roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{selected_role}"'}, "backgroundColor": "lightblue"}]
 
-    filtered_achievements = df_role_to_achievement[df_role_to_achievement["Role"] == selected_role]["Achievement"].drop_duplicates().sort_values()
+    filtered_achievements = df_role_to_achievement[df_role_to_achievement["Role"] == selected_role]["Achievement"].drop_duplicates().dropna().sort_values()
 
     filtered_tasks = df_role_to_task[df_role_to_task["Role"] == selected_role]["Task"].drop_duplicates().sort_values()
 
@@ -601,7 +603,7 @@ def word_cloud_update(clickData):
     related_roles = df_role_to_tool[df_role_to_tool["Tool"] == selected_tool]["Role"].unique()
     roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
 
-    filtered_achievements = df[df["Tool"] == selected_tool]["Achievement"].drop_duplicates().sort_values() # ToDo: create new relations
+    filtered_achievements = df[df["Tool"] == selected_tool]["Achievement"].drop_duplicates().dropna().sort_values() # ToDo: create new relations
 
     filtered_tasks = df[df["Tool"] == selected_tool]["Task"].drop_duplicates().sort_values() # ToDo: create new relations
 
@@ -674,7 +676,7 @@ def tasks_update(active_cell, data):
 
     tasks_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
 
-    filtered_achievements = df[df["Task"] == selected_task]["Achievement"].drop_duplicates().sort_values() # ToDo: add new relations
+    filtered_achievements = df[df["Task"] == selected_task]["Achievement"].drop_duplicates().dropna().sort_values() # ToDo: add new relations
 
     print(f'{callback_counter}.: tasks_update: active_cell is NOT None')
 
