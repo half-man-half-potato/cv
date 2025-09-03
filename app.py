@@ -29,10 +29,11 @@ clients_style = [
     {"if": {"state": "selected", "row_index": "odd"}, "backgroundColor": "whitesmoke", "border": "none"},
     {"if": {"state": "selected", "row_index": "even"}, "backgroundColor": "white", "border": "none"},
     {"if": {"row_index": "odd"}, "backgroundColor": "whitesmoke"},
-    {"if": {"column_id": "Client_Name_Full"}, "fontSize": "14px"},
-    {"if": {"column_id": "Project"}, "color": "rgb(85,85,85)"},
+    {"if": {"column_id": "Country"}, "width": "50px"},
+    {"if": {"column_id": "Client_Name_Full"}, "fontSize": "14px", "width": "250px"},
+    {"if": {"column_id": "Project"}, "color": "rgb(85,85,85)", "width": "250px"},
     {"if": {"filter_query": f'{{Country}} = "Belarus"', "column_id": "Country"}, "color": "rgb(128,176,213)", "fontWeight": "bold", "fontSize": "11px"},
-    {"if": {"filter_query": f'{{Country}} = "USA"', "column_id": "Country"}, "color": "rgb(61,106,152)", "fontWeight": "bold", "fontSize": "11px"}
+    {"if": {"filter_query": f'{{Country}} = "USA"', "column_id": "Country"}, "color": "rgb(61,106,152)", "fontWeight": "bold", "fontSize": "11px"},
 ]
 clients_orders_list = df["Client_Order"].drop_duplicates().sort_values().tolist()
 
@@ -147,7 +148,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
         x=df_plot["x_pos"],
         y=df_plot["y_pos"],
         text="Tool",
-        width=800,
+        width=700,
         height=300
     )
     fig.update_traces(
@@ -219,7 +220,22 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
                 "layer": "below",
                 "line": {"width": 0}
             })
-        elif selected_role is not None or selected_tool is not None or selected_task is not None or selected_achievement is not None:
+        elif i % 2 == 0: # above is blue highlighting if any (from callbacks), which overrides the default row banding (below)
+            shapes.append({
+                "type": "rect",
+                "xref": "paper",
+                "yref": "y",
+                "x0": 0,
+                "x1": 1,
+                "y0": i - 0.5,
+                "y1": i + 0.5,
+                "fillcolor": "rgba(240, 240, 240, 0.5)",
+                "layer": "below",
+                "line": {"width": 0}
+            })
+
+
+        if selected_role is not None or selected_tool is not None or selected_task is not None or selected_achievement is not None:
             # if triggered by the User clicking on the Roles/Tools/Tasks/Achievements table
             if all_clients_orders[i] in related_client_orders:
                 shapes.append({
@@ -234,19 +250,19 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
                     "layer": "below",
                     "line": {"width": 0}
                 })
-        elif i % 2 == 0: # above is blue highlighting if any (from callbacks), which overrides the default row banding (below)
-            shapes.append({
-                "type": "rect",
-                "xref": "paper",
-                "yref": "y",
-                "x0": 0,
-                "x1": 1,
-                "y0": i - 0.5,
-                "y1": i + 0.5,
-                "fillcolor": "rgba(240, 240, 240, 0.5)",
-                "layer": "below",
-                "line": {"width": 0}
-            })
+            elif i % 2 == 0: # above is blue highlighting if any (from callbacks), which overrides the default row banding (below)
+                shapes.append({
+                    "type": "rect",
+                    "xref": "paper",
+                    "yref": "y",
+                    "x0": 0,
+                    "x1": 1,
+                    "y0": i - 0.5,
+                    "y1": i + 0.5,
+                    "fillcolor": "rgba(240, 240, 240, 0.5)",
+                    "layer": "below",
+                    "line": {"width": 0}
+                })
 
     fig.update_layout(
         showlegend=False,
@@ -282,14 +298,14 @@ app.title = 'Yury Ulasenka | CV'
 app.layout = html.Div([
     html.Div(
         "Yury Ulasenka | Interactive Resume/CV",
-        style={"position": "absolute", "left": "10px", "top": "0px", "backgroundColor": "white", "height": "30px",
+        style={"position": "absolute", "left": "27px", "top": "10px", "backgroundColor": "white", "height": "30px",
                "padding": "5px", "fontSize": "20px", "fontWeight": "bold", "color": "rgb(0,0,0)", "zIndex": 1}
     ),
     html.Div(
         [
         "Click on views to filter/highlight each other. Click outside views to reset. Hover over views for tooltips.",
         ],
-        style={"position": "absolute", "left": "10px", "top": "30px", "backgroundColor": "white", "height": "25px",
+        style={"position": "absolute", "left": "27px", "top": "40px", "backgroundColor": "white", "height": "25px",
                "padding": "5px", "fontSize": "12px", "fontWeight": "bold", "color": "rgb(102,102,102)", "fontStyle": "italic", "zIndex": 1}
     ),
     html.Div(
@@ -314,12 +330,12 @@ app.layout = html.Div([
                         {"name": "Client_Order", "id": "Client_Order", "hideable": True}
                     ],
                     hidden_columns=["Client_Order"],
-                    style_cell={"textAlign": "left", "border": "none"},
+                    style_cell={"textAlign": "left", "border": "none", "fontWeight": "bold", "color": "rgb(51,51,51)"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=clients_style,
                     css=[{"selector": ".show-hide", "rule": "display: none"}, {"selector": ".dash-spreadsheet tr", "rule": "height: 25px;"}],
                 ),
-                style={"position": "absolute", "left": "285px", "top": "0px", "width": "850px", "height": "375px", "zIndex": 3}
+                style={"position": "absolute", "left": "285px", "top": "0px", "width": "750px", "height": "375px", "zIndex": 3}
             ),
             html.Div(
                 dash_table.DataTable(
@@ -331,10 +347,10 @@ app.layout = html.Div([
                     style_data_conditional=roles_style,
                     css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 29px;"}],
                 ),
-                style={"position": "absolute", "left": "1160px", "top": "0px", "width": "300px", "height": "325px", "zIndex": 2}
+                style={"position": "absolute", "left": "1080px", "top": "0px", "width": "300px", "height": "325px", "zIndex": 2}
             ),
         ],
-        style={"position": "relative", "left": "0px", "top": "70px"},
+        style={"position": "relative", "left": "20px", "top": "80px"},
     ),
 
     html.Div(
@@ -377,16 +393,15 @@ app.layout = html.Div([
                     id="word-cloud",
                     figure=create_wordcloud(),
                     config={"displayModeBar": False, "displaylogo": False},
-                    style={"width": "800px", "height": "300px"}
                 ),
-                style={"position": "absolute", "left": "680px", "top": "25px", "width": "800px", "height": "300px", "borderTop": "1px solid lightgray", "zIndex": 2}
+                style={"position": "absolute", "left": "680px", "top": "25px", "borderTop": "1px solid lightgray", "zIndex": 2}
             )
         ],
-        style={"position": "relative", "left": "0px", "top": "480px"},
+        style={"position": "relative", "left": "20px", "top": "490px"},
     ),
     html.Div(
         id="background",
-        style={"position": "absolute", "left": "0px", "top": "0px", "width": "90vw", "height": "90vh", "backgroundColor": "lavender", "zIndex": 0}
+        style={"position": "absolute", "left": "0px", "top": "0px", "width": "95vw", "height": "95vh", "backgroundColor": "lavender", "zIndex": 0}
     )
 ])
 
