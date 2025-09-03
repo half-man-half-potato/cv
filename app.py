@@ -9,6 +9,8 @@ import json # for logging
 ######################################################################### DATA ##########################################################################
 #########################################################################################################################################################
 
+# Bug: Gantt row banding disappears when clicking on othe views (except for Clients table)
+
 
 # Sources # ToDo: optimize
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
@@ -308,13 +310,13 @@ app.layout = html.Div([
                         {"name": "Client_Order", "id": "Client_Order", "hideable": True}
                     ],
                     hidden_columns=["Client_Order"],
-                    style_table={"height": "500px", "overflowY": "auto"},
+                    # style_table={"height": "500px", "overflowY": "auto"},
                     style_cell={"textAlign": "left", "border": "none"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=clients_style,
                     css=[{"selector": ".show-hide", "rule": "display: none"}, {"selector": ".dash-spreadsheet tr", "rule": "height: 25px;"}],
                 ),
-                style={"position": "absolute", "left": "285px", "top": "0px", "width": "850px", "height": "500px", "zIndex": 3}
+                style={"position": "absolute", "left": "285px", "top": "0px", "width": "850px", "height": "375px", "backgroundColor": "mediumpurple", "zIndex": 3}
             ),
             html.Div(
                 dash_table.DataTable(
@@ -324,10 +326,10 @@ app.layout = html.Div([
                     style_cell={"textAlign": "left", "border": "none"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=roles_style,
-                    style_table={"overflowY": "auto", "height": "500px"},
+                    # style_table={"overflowY": "auto", "height": "500px"},
                     css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 25px;"}],
                 ),
-                style={"position": "absolute", "left": "1160px", "top": "0px", "width": "300px", "height": "500px", "zIndex": 2}
+                style={"position": "absolute", "left": "1160px", "top": "0px", "width": "300px", "height": "325px", "backgroundColor": "mediumpurple", "zIndex": 2}
             ),
         ],
         style={"position": "relative", "left": "0px", "top": "70px"},
