@@ -402,6 +402,17 @@ app.layout = html.Div([
     html.Div(
         id="background",
         style={"position": "absolute", "left": "0px", "top": "0px", "width": "95vw", "height": "95vh", "backgroundColor": "lavender", "zIndex": 0}
+    ),
+    html.Div(
+        html.A(
+            html.Img(
+                src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/github.png",
+                style={"width": "25px", "height": "auto"}  # adjust size
+            ),
+            style={"textAlign": "center", "position": "absolute", "left": "1380px", "top": "10px", "zIndex": 1},
+            href="https://github.com/half-man-half-potato/cv",  # link target
+            target="_blank"  # open in new tab
+        )
     )
 ])
 
