@@ -330,7 +330,7 @@ app.layout = html.Div([
                 style={"position": "absolute", "left": "1160px", "top": "0px", "width": "300px", "height": "500px", "zIndex": 2}
             ),
         ],
-        style={"position": "relative", "left": "0px", "top": "90px"},
+        style={"position": "relative", "left": "0px", "top": "70px"},
     ),
 
     html.Div(
@@ -378,7 +378,7 @@ app.layout = html.Div([
                 style={"position": "absolute", "left": "680px", "top": "25px", "width": "800px", "height": "300px", "borderTop": "1px solid lightgray", "zIndex": 2}
             )
         ],
-        style={"position": "relative", "left": "0px", "top": "525px"},
+        style={"position": "relative", "left": "0px", "top": "480px"},
     ),
     html.Div(
         id="background",
