@@ -410,8 +410,21 @@ app.layout = html.Div([
             html.Div(
                 html.A(
                     html.Img(
+                        src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/email.png",
+                        style={"width": "25px", "height": "auto"},
+                        title="40to@protonmail.com"
+                    ),
+                    style={"textAlign": "center", "position": "absolute", "left": "10px", "top": "0px", "zIndex": 1},
+                    href="mailto:40to@protonmail.com",
+                    target="_blank"
+                )
+            ),
+            html.Div(
+                html.A(
+                    html.Img(
                         src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/linkedin.png",
-                        style={"width": "25px", "height": "auto"}
+                        style={"width": "25px", "height": "auto"},
+                        title="https://www.linkedin.com/in/yury-ulasenka/"
                     ),
                     style={"textAlign": "center", "position": "absolute", "left": "45px", "top": "0px", "zIndex": 1},
                     href="https://www.linkedin.com/in/yury-ulasenka/",
@@ -422,7 +435,8 @@ app.layout = html.Div([
                 html.A(
                     html.Img(
                         src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/github.png",
-                        style={"width": "25px", "height": "auto"}
+                        style={"width": "25px", "height": "auto"},
+                        title="https://github.com/half-man-half-potato/cv"
                     ),
                     style={"textAlign": "center", "position": "absolute", "left": "80px", "top": "0px", "zIndex": 1},
                     href="https://github.com/half-man-half-potato/cv",
