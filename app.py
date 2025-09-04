@@ -410,12 +410,23 @@ app.layout = html.Div([
             html.Div(
                 html.A(
                     html.Img(
+                        src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/linkedin.png",
+                        style={"width": "25px", "height": "auto"}
+                    ),
+                    style={"textAlign": "center", "position": "absolute", "left": "45px", "top": "0px", "zIndex": 1},
+                    href="https://www.linkedin.com/in/yury-ulasenka/",
+                    target="_blank"
+                )
+            ),
+            html.Div(
+                html.A(
+                    html.Img(
                         src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/github.png",
-                        style={"width": "25px", "height": "auto"}  # adjust size
+                        style={"width": "25px", "height": "auto"}
                     ),
                     style={"textAlign": "center", "position": "absolute", "left": "80px", "top": "0px", "zIndex": 1},
-                    href="https://github.com/half-man-half-potato/cv",  # link target
-                    target="_blank"  # open in new tab
+                    href="https://github.com/half-man-half-potato/cv",
+                    target="_blank"
                 )
             )
         ],
