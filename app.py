@@ -92,7 +92,6 @@ df_tools["Font_Size"] = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - t
 
 
 def create_wordcloud(selected_client_order=None, selected_role=None, selected_tool=None, selected_task=None, selected_achievement=None):
-    # ToDo: increase font size by 1 for the selected tools? (don't change the default view)
     df_plot = df_tools.copy()
 
     # dim colors for the unrelated items (if any)
@@ -120,6 +119,14 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
             tool_type_colors[row["Tool_Type"]] if row["Tool"] == selected_tool
             else
             tool_type_colors_2[row["Tool_Type"]],
+            axis=1
+        )
+        # ToDo: increase font size by 1 for the selected tools?
+        df_plot["Font_Size"] = df_plot.apply(
+            lambda row:
+            row["Font_Size"] + 2 if row["Tool"] == selected_tool
+            else
+            row["Font_Size"],
             axis=1
         )
     elif selected_task is not None: # if triggered by the User clicking on the Tasks table
@@ -152,7 +159,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
     fig.update_traces(
         mode="text",
         textposition="middle center",
-        textfont_size=df_tools["Font_Size"],
+        textfont_size=df_plot["Font_Size"],
         textfont_color=df_plot["Color"],
         hovertemplate="Tool: %{text}<br>Type: %{customdata[0]}<br>Size: %{customdata[1]}",
         customdata=df_plot[["Tool_Type", "Tool_Size"]]
@@ -300,18 +307,18 @@ app.title = 'Yury Ulasenka | CV'
 
 app.layout = html.Div([
     html.Div(
-        style={"width": "1360px", "height": "75px", "backgroundColor": "lightblue","position": "absolute", "left": "0px", "top": "0px", "zIndex": 1}
+        style={"width": "1360px", "height": "75px", "backgroundColor": "lightgray","position": "absolute", "left": "0px", "top": "0px", "zIndex": 1}
     ),
     html.Div(
         "Yury Ulasenka | Interactive Resume/CV",
-        style={"position": "absolute", "left": "27px", "top": "10px", "backgroundColor": "lightblue", "height": "30px",
+        style={"position": "absolute", "left": "27px", "top": "10px", "backgroundColor": None, "height": "30px",
                "padding": "5px", "fontSize": "20px", "fontWeight": "bold", "color": "rgb(0,0,0)", "zIndex": 2}
     ),
     html.Div(
         [
         "Click on views to filter / highlight other views. Click outside views to reset. Hover over views for tooltips.",
         ],
-        style={"position": "absolute", "left": "27px", "top": "40px", "backgroundColor": "lightblue", "height": "25px",
+        style={"position": "absolute", "left": "27px", "top": "40px", "backgroundColor": None, "height": "25px",
                "padding": "5px", "fontSize": "12px", "fontWeight": "bold", "color": "rgb(51,51,51)", "fontStyle": "italic", "zIndex": 2}
     ),
     html.Div(
