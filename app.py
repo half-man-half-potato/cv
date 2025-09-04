@@ -30,7 +30,7 @@ clients_style = [
     {"if": {"state": "selected", "row_index": "even"}, "backgroundColor": "white", "border": "none"},
     {"if": {"row_index": "odd"}, "backgroundColor": "whitesmoke"},
     {"if": {"column_id": "Country"}, "width": "50px"},
-    {"if": {"column_id": "Client_Name_Full"}, "fontSize": "14px", "width": "250px"},
+    {"if": {"column_id": "Client_Name_Full"}, "fontSize": "13px", "width": "250px"},
     {"if": {"column_id": "Project"}, "color": "rgb(85,85,85)", "width": "250px"},
     {"if": {"filter_query": f'{{Country}} = "Belarus"', "column_id": "Country"}, "color": "rgb(128,176,213)", "fontWeight": "bold", "fontSize": "11px"},
     {"if": {"filter_query": f'{{Country}} = "USA"', "column_id": "Country"}, "color": "rgb(61,106,152)", "fontWeight": "bold", "fontSize": "11px"},
@@ -39,10 +39,10 @@ clients_orders_list = df["Client_Order"].drop_duplicates().sort_values().tolist(
 
 
 # Gantt
-df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer']].drop_duplicates().sort_values(by='Client_Order', ascending=False)
+df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer', 'Employer_Label']].drop_duplicates().sort_values(by='Client_Order', ascending=False)
 df_gantt['Start_Date'] = pd.to_datetime(df_gantt['Start_Date'])
 df_gantt['End_Date'] = pd.to_datetime(df_gantt['End_Date'])
-df_gantt['color'] = df_gantt['Employer'].map({'EPAM Systems': 'rgb(164,164,164)', 'Ernst & Young': 'rgb(205,205,205)'})
+df_gantt['color'] = df_gantt['Employer'].map({'EPAM Systems': 'rgb(154,154,154)', 'Ernst & Young': 'rgb(205,205,205)'})
 
 all_clients_orders = df[["Client_Order"]].drop_duplicates().sort_values(by='Client_Order', ascending=False).values.tolist()
 
@@ -201,6 +201,7 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
         x_end="End_Date",
         y="Client_Name_Full",
         color="color",
+        text="Employer_Label",
         color_discrete_map="identity",
         category_orders={"Client_Name_Full": clients_list}
     )
@@ -279,6 +280,10 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
         color='gray',
         tickfont=dict(size=10),
         range=[pd.Timestamp("2009-10-01"), pd.Timestamp("2025-12-31")]
+    )
+    fig.update_traces(
+        textposition="outside",  # text inside bars
+        textfont=dict(color="rgb(85,85,85)", size=11)  # change text color if needed
     )
 
     return fig
@@ -401,7 +406,7 @@ app.layout = html.Div([
     ),
     html.Div(
         id="background",
-        style={"position": "absolute", "left": "0px", "top": "0px", "width": "95vw", "height": "95vh", "backgroundColor": "lavender", "zIndex": 0}
+        style={"position": "absolute", "left": "0px", "top": "0px", "width": "95vw", "height": "95vh", "backgroundColor": "white", "zIndex": 0}
     ),
 
 
