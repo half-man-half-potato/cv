@@ -309,7 +309,7 @@ app.layout = html.Div([
     ),
     html.Div(
         [
-        "Click on views to filter/highlight each other. Click outside views to reset. Hover over views for tooltips.",
+        "Click on views to filter / highlight other views. Click outside views to reset. Hover over views for tooltips.",
         ],
         style={"position": "absolute", "left": "27px", "top": "40px", "backgroundColor": "lightblue", "height": "25px",
                "padding": "5px", "fontSize": "12px", "fontWeight": "bold", "color": "rgb(51,51,51)", "fontStyle": "italic", "zIndex": 2}
