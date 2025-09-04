@@ -83,7 +83,7 @@ df_tools["Color"] = df_tools["Tool_Type"].map(tool_type_colors).fillna("black")
 df_tools = df_tools.merge(df_coordinates, on="Tool", how="left")
 size_min, size_max = 10, 24
 tool_sizes = df_tools["Tool_Size"]
-size_scaled = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - tool_sizes.min()) * (size_max - size_min)) + size_min
+df_tools["Font_Size"] = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - tool_sizes.min()) * (size_max - size_min)) + size_min # ToDo: optimize
 
 
 #########################################################################################################################################################
@@ -152,7 +152,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
     fig.update_traces(
         mode="text",
         textposition="middle center",
-        textfont_size=size_scaled,
+        textfont_size=df_tools["Font_Size"],
         textfont_color=df_plot["Color"],
         hovertemplate="Tool: %{text}<br>Type: %{customdata[0]}<br>Size: %{customdata[1]}",
         customdata=df_plot[["Tool_Type", "Tool_Size"]]
@@ -356,7 +356,7 @@ app.layout = html.Div([
                 style={"position": "absolute", "left": "1080px", "top": "0px", "width": "250px", "height": "325px", "zIndex": 2}
             ),
         ],
-        style={"position": "relative", "left": "20px", "top": "80px"},
+        style={"position": "relative", "left": "20px", "top": "80px", "width": "1330px","zIndex": 1},
     ),
 
     html.Div(
@@ -403,7 +403,7 @@ app.layout = html.Div([
                 style={"position": "absolute", "left": "680px", "top": "25px", "borderTop": "1px solid lightgray", "zIndex": 2}
             )
         ],
-        style={"position": "relative", "left": "20px", "top": "500px"},
+        style={"position": "relative", "left": "20px", "top": "500px", "width": "1330px","zIndex": 1},
     ),
     html.Div(
         id="background",
@@ -462,7 +462,7 @@ app.layout = html.Div([
                 )
             )
         ],
-        style={"position": "relative", "left": "1200px", "top": "10px"},
+        style={"position": "relative", "left": "1200px", "top": "10px", "width": "140px", "zIndex": 1},
     )
 
 
