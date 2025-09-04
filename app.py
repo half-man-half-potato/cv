@@ -300,16 +300,19 @@ app.title = 'Yury Ulasenka | CV'
 
 app.layout = html.Div([
     html.Div(
+        style={"width": "1360px", "height": "75px", "backgroundColor": "lightblue","position": "absolute", "left": "0px", "top": "0px", "zIndex": 1}
+    ),
+    html.Div(
         "Yury Ulasenka | Interactive Resume/CV",
-        style={"position": "absolute", "left": "27px", "top": "10px", "backgroundColor": "white", "height": "30px",
-               "padding": "5px", "fontSize": "20px", "fontWeight": "bold", "color": "rgb(0,0,0)", "zIndex": 1}
+        style={"position": "absolute", "left": "27px", "top": "10px", "backgroundColor": "lightblue", "height": "30px",
+               "padding": "5px", "fontSize": "20px", "fontWeight": "bold", "color": "rgb(0,0,0)", "zIndex": 2}
     ),
     html.Div(
         [
         "Click on views to filter/highlight each other. Click outside views to reset. Hover over views for tooltips.",
         ],
-        style={"position": "absolute", "left": "27px", "top": "40px", "backgroundColor": "white", "height": "25px",
-               "padding": "5px", "fontSize": "12px", "fontWeight": "bold", "color": "rgb(102,102,102)", "fontStyle": "italic", "zIndex": 1}
+        style={"position": "absolute", "left": "27px", "top": "40px", "backgroundColor": "lightblue", "height": "25px",
+               "padding": "5px", "fontSize": "12px", "fontWeight": "bold", "color": "rgb(51,51,51)", "fontStyle": "italic", "zIndex": 2}
     ),
     html.Div(
         children=[
@@ -459,7 +462,7 @@ app.layout = html.Div([
                 )
             )
         ],
-        style={"position": "relative", "left": "1210px", "top": "10px"},
+        style={"position": "relative", "left": "1200px", "top": "10px"},
     )
 
 
