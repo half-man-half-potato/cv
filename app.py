@@ -9,8 +9,6 @@ import json # for logging
 ######################################################################### DATA ##########################################################################
 #########################################################################################################################################################
 
-# Bug: Gantt row banding disappears when clicking on othe views (except for Clients table)
-
 
 # Sources # ToDo: optimize
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
@@ -148,7 +146,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
         x=df_plot["x_pos"],
         y=df_plot["y_pos"],
         text="Tool",
-        width=700,
+        width=650,
         height=300
     )
     fig.update_traces(
@@ -350,9 +348,9 @@ app.layout = html.Div([
                     style_cell={"textAlign": "left", "border": "none", "color": "rgb(85,85,85)"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=roles_style,
-                    css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 29px;"}],
+                    css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 29px;"}], # ToDo: change header height to 25
                 ),
-                style={"position": "absolute", "left": "1080px", "top": "0px", "width": "300px", "height": "325px", "zIndex": 2}
+                style={"position": "absolute", "left": "1080px", "top": "0px", "width": "250px", "height": "325px", "zIndex": 2}
             ),
         ],
         style={"position": "relative", "left": "20px", "top": "80px"},
@@ -402,7 +400,7 @@ app.layout = html.Div([
                 style={"position": "absolute", "left": "680px", "top": "25px", "borderTop": "1px solid lightgray", "zIndex": 2}
             )
         ],
-        style={"position": "relative", "left": "20px", "top": "490px"},
+        style={"position": "relative", "left": "20px", "top": "500px"},
     ),
     html.Div(
         id="background",
@@ -453,7 +451,7 @@ app.layout = html.Div([
                     html.Img(
                         src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/link.png",
                         style={"width": "25px", "height": "auto"},
-                        title="more link here: https://yuryulasenka.wixsite.com/resume"
+                        title="more links here: https://yuryulasenka.wixsite.com/resume"
                     ),
                     style={"textAlign": "center", "position": "absolute", "left": "115px", "top": "0px", "zIndex": 1},
                     href="https://yuryulasenka.wixsite.com/resume",
@@ -461,7 +459,7 @@ app.layout = html.Div([
                 )
             )
         ],
-        style={"position": "relative", "left": "1260px", "top": "10px"},
+        style={"position": "relative", "left": "1210px", "top": "10px"},
     )
 
 
