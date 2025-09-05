@@ -21,7 +21,7 @@ df_role_to_tool = pd.read_csv("https://raw.githubusercontent.com/half-man-half-p
 
 
 # Clients table
-df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project']].drop_duplicates().sort_values(by='Client_Order')
+df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project', 'Start_Date', 'End_Date']].drop_duplicates().sort_values(by='Client_Order')
 clients_style = [
     {"if": {"state": "active"}, "backgroundColor": "lightblue"},
     {"if": {"state": "selected", "row_index": "odd"}, "backgroundColor": "whitesmoke", "border": "none"},
@@ -34,7 +34,16 @@ clients_style = [
     {"if": {"filter_query": f'{{Country}} = "USA"', "column_id": "Country"}, "color": "rgb(61,106,152)", "fontWeight": "bold", "fontSize": "11px"},
 ]
 clients_orders_list = df["Client_Order"].drop_duplicates().sort_values().tolist()
-
+tooltip_data = []
+for _, row in df_clients.iterrows(): # ToDo: understand better
+    tooltip_text = (
+        f"**Client:** {row['Start_Date']}  \n"
+        f"**Country:** {row['End_Date']}"
+    )
+    tooltip_data.append({
+        col: {"value": tooltip_text, "type": "markdown"}
+        for col in df_clients.columns
+    })
 
 # Gantt
 df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer', 'Employer_Label']].drop_duplicates().sort_values(by='Client_Order', ascending=False)
@@ -342,7 +351,8 @@ app.layout = html.Div([
                         {"name": "Project / Product", "id": "Project"},
                         {"name": "Client_Order", "id": "Client_Order", "hideable": True}
                     ],
-                    hidden_columns=["Client_Order"],
+                    tooltip_data=tooltip_data,
+                    hidden_columns=["Client_Order", 'Start_Date', 'End_Date'],
                     style_cell={"textAlign": "left", "border": "none", "fontWeight": "bold", "color": "rgb(51,51,51)"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=clients_style,
