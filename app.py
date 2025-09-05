@@ -24,11 +24,9 @@ df_role_to_tool = pd.read_csv("https://raw.githubusercontent.com/half-man-half-p
 df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project', 'Dates_range', 'NDA', 'Big_five']].drop_duplicates().sort_values(by='Client_Order')
 tooltip_data = []
 for _, row in df_clients.iterrows(): # ToDo: understand better
-    tooltip_text = (
-        f"{row['Dates_range']} ({row['Country']})  \n\n"
-        f"**{row['Client_Name_Full'] if not row['NDA'] else 'Client name protected by NDA'}**  \n\n"
-        f"## {'Big Five company' if row['Big_five'] else ''}"
-    )
+    tooltip_text = (f"{row['Dates_range']} ({row['Country']})" if row['Client_Name_Full'] != 'various' else f"various dates ({row['Country']})") + "  \n\n" \
+                   + f"**{row['Client_Name_Full'] if not row['NDA'] else ('Client name is protected by NDA' if row['Client_Name_Full'] != 'various' else 'Client names are protected by NDA')}**  \n\n" \
+                   + f"### {'Big Five company' if row['Big_five'] else ''}"
     tooltip_data.append({
         col: {"value": tooltip_text, "type": "markdown"}
         for col in df_clients.columns
@@ -48,10 +46,12 @@ clients_orders_list = df["Client_Order"].drop_duplicates().sort_values().tolist(
 
 
 # Gantt
-df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer', 'Employer_Label']].drop_duplicates().sort_values(by='Client_Order', ascending=False)
+df_gantt = df[['Client_Order', 'Client_Name_Full', 'Start_Date', 'End_Date', 'Employer', 'Employer_Label', 'Country']].drop_duplicates().sort_values(by='Client_Order', ascending=False)
 df_gantt['Start_Date'] = pd.to_datetime(df_gantt['Start_Date'])
 df_gantt['End_Date'] = pd.to_datetime(df_gantt['End_Date'])
 df_gantt['color'] = df_gantt['Employer'].map({'EPAM Systems': 'rgb(154,154,154)', 'Ernst & Young': 'rgb(205,205,205)'})
+df_gantt['Start_Month'] = df_gantt['Start_Date'].dt.strftime("%b-%Y")
+df_gantt['End_Month'] = df_gantt['End_Date'].dt.strftime("%b-%Y")
 
 all_clients_orders = df[["Client_Order"]].drop_duplicates().sort_values(by='Client_Order', ascending=False).values.tolist()
 
@@ -172,8 +172,7 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
         textposition="middle center",
         textfont_size=df_plot["Font_Size"],
         textfont_color=df_plot["Color"],
-        hovertemplate="Tool: %{text}<br>Type: %{customdata[0]}<br>Size: %{customdata[1]}",
-        customdata=df_plot[["Tool_Type", "Tool_Size"]]
+        hovertemplate="%{text}"
     )
     fig.update_layout(
         xaxis=dict(showgrid=False, showticklabels=False, zeroline=False, fixedrange=True),
@@ -286,7 +285,14 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
         title=None,
         margin=dict(l=0, r=0, t=0, b=0),
         plot_bgcolor='white',
-        shapes=shapes
+        shapes=shapes,
+        hoverlabel=dict(
+            bgcolor="whitesmoke",
+            font_size=12,
+            font_color="rgb(51,51,51)",
+            font_family="Arial",
+            bordercolor="lightgray"
+        )
     )
     fig.update_yaxes(visible=False)
     fig.update_xaxes(
@@ -298,6 +304,8 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
         range=[pd.Timestamp("2009-10-01"), pd.Timestamp("2025-12-31")]
     )
     fig.update_traces(
+        hovertemplate="%{customdata[0]} – %{customdata[1]} (%{customdata[2]})<br>Employer: %{customdata[3]}<br>Client: %{customdata[4]}",
+        customdata=df_plot[["Start_Month", "End_Month", "Country", "Employer", "Client_Name_Full"]],
         textposition="outside",  # text inside bars
         textfont=dict(color="rgb(85,85,85)", size=11)  # change text color if needed
     )
@@ -336,12 +344,12 @@ app.layout = html.Div([
         children=[
             html.Div(
                 dcc.Graph(id="gantt-chart", figure=create_gantt(), config={"displayModeBar": False, "displaylogo": False}),
-                style={"position": "absolute", "left": "0px", "top": "25px", "width": "300px", "height": "376px", "borderTop": "1px solid lightgray", "zIndex": 2}
+                style={"position": "absolute", "left": "0px", "top": "25px", "width": "300px", "height": "376px", "borderTop": "1px solid lightgray", "zIndex": 12}
             ),
             html.Div(
                 "Timeline / Employer",
                 style={"position": "absolute", "left": "0px", "top":  "0px","backgroundColor": "white", "height": "25px",
-                       "padding": "5px", "fontSize": "11px", "fontWeight": "bold", "color": "rgb(85,85,85)", "zIndex": 1}
+                       "padding": "5px", "fontSize": "11px", "fontWeight": "bold", "color": "rgb(85,85,85)", "zIndex": 11}
             ),
             html.Div(
                 dash_table.DataTable(
@@ -360,7 +368,7 @@ app.layout = html.Div([
                     style_data_conditional=clients_style,
                     css=[{"selector": ".show-hide", "rule": "display: none"}, {"selector": ".dash-spreadsheet tr", "rule": "height: 25px;"}],
                 ),
-                style={"position": "absolute", "left": "285px", "top": "0px", "width": "750px", "height": "375px", "zIndex": 3}
+                style={"position": "absolute", "left": "285px", "top": "0px", "width": "750px", "height": "375px", "zIndex": 13}
             ),
             html.Div(
                 dash_table.DataTable(
@@ -372,10 +380,10 @@ app.layout = html.Div([
                     style_data_conditional=roles_style,
                     css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 29px;"}], # ToDo: change header height to 25
                 ),
-                style={"position": "absolute", "left": "1080px", "top": "0px", "width": "250px", "height": "325px", "zIndex": 2}
+                style={"position": "absolute", "left": "1080px", "top": "0px", "width": "250px", "height": "325px", "zIndex": 12}
             ),
         ],
-        style={"position": "relative", "left": "20px", "top": "80px", "width": "1330px","zIndex": 1},
+        style={"position": "relative", "left": "20px", "top": "80px", "width": "1330px","zIndex": 11},
     ),
 
     html.Div(
@@ -411,7 +419,7 @@ app.layout = html.Div([
             html.Div(
                 "Tool",
                 style={"position": "absolute", "left": "680px", "top": "0px", "backgroundColor": "white", "height": "25px",
-                       "padding": "5px", "fontSize": "11px", "fontWeight": "bold", "color": "rgb(85,85,85)", "zIndex": 1}
+                       "padding": "5px", "fontSize": "11px", "fontWeight": "bold", "color": "rgb(85,85,85)", "zIndex": 2}
             ),
             html.Div(
                 dcc.Graph(
