@@ -487,9 +487,22 @@ app.layout = html.Div([
                     href="https://yuryulasenka.wixsite.com/resume",
                     target="_blank"
                 )
+            ),
+            html.Div(
+                html.A(
+                    html.Img(
+                        src="https://raw.githubusercontent.com/half-man-half-potato/cv/master/assets/pdf.png",
+                        style={"width": "25px", "height": "auto"},
+                        title="download a PDF resume/CV"
+                    ),
+                    style={"textAlign": "center", "position": "absolute", "left": "150px", "top": "0px", "zIndex": 1},
+                    href="/assets/Yury Ulasenka - CV.pdf",
+                    download="Yury Ulasenka - CV.pdf",
+                    target="_blank"
+                )
             )
         ],
-        style={"position": "relative", "left": "1200px", "top": "10px", "width": "140px", "zIndex": 1},
+        style={"position": "relative", "left": "1165px", "top": "10px", "width": "175px", "zIndex": 1},
     )
 
 
