@@ -5,9 +5,9 @@ body {
     font-size: 12px;
 }
 .dash-table-tooltip {
-    background-color: #f9f0c1 !important;  /* soft yellow */
+    z-index: 9999 !important;
     color: #333 !important;
-    font-weight: bold;
     border-radius: 6px;
     padding: 6px 8px;
+
 }
