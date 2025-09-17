@@ -10,7 +10,7 @@ import json # for logging
 #########################################################################################################################################################
 
 
-# Sources # ToDo: optimize
+# Sources # ToDo
 df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
 
 df_coordinates = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/word_cloud_coordinates.csv") # coordinates for Word cloud items
@@ -18,12 +18,13 @@ df_coordinates = pd.read_csv("https://raw.githubusercontent.com/half-man-half-po
 df_role_to_achievement = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/role-achievement.csv")
 df_role_to_task = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/role-task.csv")
 df_role_to_tool = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/role-tool.csv")
+df_task_to_achievement = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/task-achievement.csv")
 
 
 # Clients table
 df_clients = df[['Client_Order', 'Country', 'Client_Name_Full', 'Project', 'Dates_range', 'NDA', 'Big_five']].drop_duplicates().sort_values(by='Client_Order')
 tooltip_data = []
-for _, row in df_clients.iterrows(): # ToDo: understand better
+for _, row in df_clients.iterrows(): # ToDo
     tooltip_text = (f"{row['Dates_range']} ({row['Country']})" if row['Client_Name_Full'] != 'various' else f"various dates ({row['Country']})") + "  \n\n" \
                    + f"**{row['Client_Name_Full'] if not row['NDA'] else ('Client name is protected by NDA' if row['Client_Name_Full'] != 'various' else 'Client names are protected by NDA')}**  \n\n" \
                    + f"### {'Big Five company' if row['Big_five'] else ''}"
@@ -94,7 +95,7 @@ df_tools["Color"] = df_tools["Tool_Type"].map(tool_type_colors).fillna("black")
 df_tools = df_tools.merge(df_coordinates, on="Tool", how="left")
 size_min, size_max = 10, 24
 tool_sizes = df_tools["Tool_Size"]
-df_tools["Font_Size"] = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - tool_sizes.min()) * (size_max - size_min)) + size_min # ToDo: optimize
+df_tools["Font_Size"] = ((tool_sizes - tool_sizes.min()) / (tool_sizes.max() - tool_sizes.min()) * (size_max - size_min)) + size_min # ToDo
 
 
 #########################################################################################################################################################
@@ -132,7 +133,6 @@ def create_wordcloud(selected_client_order=None, selected_role=None, selected_to
             tool_type_colors_2[row["Tool_Type"]],
             axis=1
         )
-        # ToDo: increase font size by 1 for the selected tools?
         df_plot["Font_Size"] = df_plot.apply(
             lambda row:
             row["Font_Size"] + 2 if row["Tool"] == selected_tool
@@ -249,7 +249,6 @@ def create_gantt(selected_client_order=None, selected_role=None, selected_tool=N
                 "layer": "below",
                 "line": {"width": 0}
             })
-
 
         if selected_role is not None or selected_tool is not None or selected_task is not None or selected_achievement is not None:
             # if triggered by the User clicking on the Roles/Tools/Tasks/Achievements table
@@ -378,7 +377,7 @@ app.layout = html.Div([
                     style_cell={"textAlign": "left", "border": "none", "color": "rgb(85,85,85)"},
                     style_header={"borderBottom": "1px solid lightgray", "fontWeight": "bold", "color": "rgb(85,85,85)", "backgroundColor": "white", "fontSize": "11px"},
                     style_data_conditional=roles_style,
-                    css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 29px;"}], # ToDo: change header height to 25
+                    css=[{"selector": ".dash-spreadsheet tr", "rule": "height: 29px;"}],
                 ),
                 style={"position": "absolute", "left": "1080px", "top": "0px", "width": "250px", "height": "325px", "zIndex": 12}
             ),
@@ -721,9 +720,9 @@ def word_cloud_update(clickData):
     related_roles = df_role_to_tool[df_role_to_tool["Tool"] == selected_tool]["Role"].unique()
     roles_style_conditional = [{"if": {"filter_query": f'{{Role}} = "{role}"'}, "backgroundColor": "lightblue"} for role in related_roles]
 
-    filtered_achievements = df[df["Tool"] == selected_tool]["Achievement"].drop_duplicates().dropna().sort_values() # ToDo: create new relations
+    filtered_achievements = df[df["Tool"] == selected_tool]["Achievement"].drop_duplicates().dropna().sort_values()
 
-    filtered_tasks = df[df["Tool"] == selected_tool]["Task"].drop_duplicates().sort_values() # ToDo: create new relations
+    filtered_tasks = df[df["Tool"] == selected_tool]["Task"].drop_duplicates().sort_values()
 
     return (
             create_gantt(selected_tool=selected_tool),  # 1
@@ -794,7 +793,7 @@ def tasks_update(active_cell, data):
 
     tasks_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
 
-    filtered_achievements = df[df["Task"] == selected_task]["Achievement"].drop_duplicates().dropna().sort_values() # ToDo: add new relations
+    filtered_achievements = df_task_to_achievement[df_task_to_achievement["Task"] == selected_task]["Achievement"].drop_duplicates().dropna().sort_values()
 
     print(f'{callback_counter}.: tasks_update: active_cell is NOT None')
 
@@ -874,7 +873,7 @@ def achievements_update(active_cell, data):
 
     achievements_style_conditional = [{"if": {"row_index": active_cell_row}, "backgroundColor": "lightblue"}]
 
-    filtered_tasks = df[df["Achievement"] == selected_achievement]["Task"].drop_duplicates().sort_values() # ToDo: add new relations
+    filtered_tasks = df_task_to_achievement[df_task_to_achievement["Achievement"] == selected_achievement]["Task"].drop_duplicates().sort_values()
 
     print(f'{callback_counter}.: achievements_update: active_cell is NOT None')
 
@@ -922,10 +921,10 @@ def background_deactivate(n_clicks):
     Output("gantt-chart", "figure", allow_duplicate=True),  # 1. Gantt
     Output("projects-table", "style_data_conditional", allow_duplicate=True),  # 2. Client
     Output("roles-table", "style_data_conditional", allow_duplicate=True), # 3. Roles
-    Output("achievements-table", "data", allow_duplicate=True),  # 4.1 Achievements: data (remove filters) Comment: NEW!
-    Output("achievements-table", "style_data_conditional", allow_duplicate=True),  # 4.2 Achievements: formatting (remove highlighting)  Comment: NEW!
-    Output("tasks-table", "data", allow_duplicate=True),  # 5.1 Tasks: data (remove filters) Comment: NEW!
-    Output("tasks-table", "style_data_conditional", allow_duplicate=True),  # 5.2 Tasks: formatting (remove highlighting)  Comment: NEW!
+    Output("achievements-table", "data", allow_duplicate=True),  # 4.1 Achievements: data (remove filters)
+    Output("achievements-table", "style_data_conditional", allow_duplicate=True),  # 4.2 Achievements: formatting (remove highlighting)
+    Output("tasks-table", "data", allow_duplicate=True),  # 5.1 Tasks: data (remove filters)
+    Output("tasks-table", "style_data_conditional", allow_duplicate=True),  # 5.2 Tasks: formatting (remove highlighting)
     Output("word-cloud", "figure", allow_duplicate=True),  # 6. Word cloud
     Input("background", "n_clicks"),
     prevent_initial_call=True
@@ -939,9 +938,9 @@ def background_update(n_clicks):
             create_gantt(), # 1
             clients_style, # 2
             roles_style, # 3
-            df_achievements.to_dict("records"), # 4.1  Comment: NEW
-            clients_style,  # 4.2 Comment: NEW
-            df_tasks.to_dict("records"), # 5.1  Comment: NEW!
-            clients_style,  # 5.2 Comment: NEW
+            df_achievements.to_dict("records"), # 4.1
+            clients_style,  # 4.2
+            df_tasks.to_dict("records"), # 5.1
+            clients_style,  # 5.2
             create_wordcloud() # 6
             )
