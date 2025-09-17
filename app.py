@@ -10,15 +10,14 @@ import json # for logging
 #########################################################################################################################################################
 
 
-# Sources # ToDo
-df = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/data.csv")
+df = pd.read_csv('data/data.csv')
 
-df_coordinates = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/word_cloud_coordinates.csv") # coordinates for Word cloud items
+df_coordinates = pd.read_csv('data/word_cloud_coordinates.csv')
 
-df_role_to_achievement = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/role-achievement.csv")
-df_role_to_task = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/role-task.csv")
-df_role_to_tool = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/role-tool.csv")
-df_task_to_achievement = pd.read_csv("https://raw.githubusercontent.com/half-man-half-potato/cv/master/task-achievement.csv")
+df_role_to_achievement = pd.read_csv('data/role-achievement.csv')
+df_role_to_task = pd.read_csv('data/role-task.csv')
+df_role_to_tool = pd.read_csv('data/role-tool.csv')
+df_task_to_achievement = pd.read_csv('data/task-achievement.csv')
 
 
 # Clients table
