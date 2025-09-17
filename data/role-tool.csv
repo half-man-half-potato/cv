@@ -1,0 +1,63 @@
+﻿Role,Tool
+Audit Assistant,MS Excel
+Audit Assistant,VBA
+Audit Assistant,proprietary tools
+Automation Engineer,MS Excel
+Automation Engineer,VBA
+BI Developer,GoodData
+BI Developer,JavaScript
+BI Developer,Looker
+BI Developer,MicroStrategy
+BI Developer,MS Excel
+BI Developer,QlikView
+BI Developer,SAP Crystal Reports
+BI Developer,Tableau
+BI Developer,TIBCO Spotfire
+BI Developer,Git
+BI Developer,Python
+BI Developer,R
+Business Analyst,draw.io
+Business Analyst,"Jira, Confluence, etc."
+Business Analyst,Lucidchart
+Business Analyst,MS Excel
+Business Analyst,proprietary tools
+Consultant,Tableau
+Consultant,MS Excel
+Consultant,VBA
+Data Analyst,Amazon Redshift
+Data Analyst,BigQuery
+Data Analyst,Hive
+Data Analyst,IBM Db2
+Data Analyst,MongoDB
+Data Analyst,MS SQL Server
+Data Analyst,MySQL
+Data Analyst,Neo4j
+Data Analyst,Oracle SQL Developer
+Data Analyst,PostgreSQL
+Data Analyst,Presto
+Data Analyst,Python
+Data Analyst,R
+Data Analyst,SQL
+Data Analyst,Toad
+Data Architect,erwin
+Data Architect,SAP PowerDesigner
+Data Modeler,erwin
+Data Modeler,SAP PowerDesigner
+Data Modeler,MongoDB
+Data Modeler,Neo4j
+Data Modeler,Python
+Data Modeler,R
+Dev Team Lead,Tableau
+Product Designer,JavaScript
+Product Designer,Looker
+Product Designer,MicroStrategy
+Product Designer,MS Excel
+Product Designer,QlikView
+Product Designer,SAP Crystal Reports
+Product Designer,Tableau
+Product Designer,TIBCO Spotfire
+QA Engineer,OpenShift
+QA Engineer,SQL
+QA Engineer,Looker
+Server Administrator,Looker
+Server Administrator,Tableau
